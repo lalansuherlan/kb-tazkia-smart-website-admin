@@ -10,9 +10,9 @@ let pool: mysql.Pool;
 // Konfigurasi Database
 const dbConfig = {
   host: process.env.DB_HOST, // Hapus default localhost agar tidak error di prod
-  user: process.env.DB_USER,
+  user: process.env.DB_USERNAME,
   password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
+  database: process.env.DB_DATABASE,
   port: Number(process.env.DB_PORT) || 3306, // Penting: TiDB pakai port 4000
   waitForConnections: true,
   connectionLimit: 5,
