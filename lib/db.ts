@@ -7,38 +7,24 @@ declare global {
 
 let pool: mysql.Pool;
 
-// --- DEBUGGING LOG (Hanya akan muncul di Logs Vercel) ---
-if (process.env.NODE_ENV === "production") {
-  console.log("=== VERCEL DEBUG ===");
-  // Kita cek karakter pertama dan terakhir user
-  const user = process.env.DB_USERNAME || "";
-  console.log(`Username Length: ${user.length}`);
-  console.log(`First Char: ${user.charAt(0)}`); // Jika keluarnya ' (tanda kutip), berarti MASIH ada kutip
-  console.log(`Last Char: ${user.charAt(user.length - 1)}`);
-  console.log(`Raw Username: [${user}]`); // Tanda kurung siku untuk melihat spasi/kutip
-  console.log("====================");
-}
-// ---------------------------------------------------------
-
-// Konfigurasi Database
-const isTiDBCloud = process.env.DB_HOST?.includes("tidbcloud.com") ?? false;
+// Konfigurasi Database (Disesuaikan untuk Railway)
 const dbConfig = {
-  host: process.env.DB_HOST, // Hapus default localhost agar tidak error di prod
+  host: process.env.DB_HOST,
   user: process.env.DB_USERNAME,
   password: process.env.DB_PASSWORD,
   database: process.env.DB_DATABASE,
-  port: Number(process.env.DB_PORT) || 3306, // Penting: TiDB pakai port 4000
+  // Railway menggunakan port acak (bukan 3306), jadi wajib ambil dari env
+  port: Number(process.env.DB_PORT),
   waitForConnections: true,
   connectionLimit: 5,
   queueLimit: 0,
-  // --- TAMBAHAN WAJIB UNTUK TIDB CLOUD ---
-  ...(isTiDBCloud && {
-    ssl: {
-      minVersion: "TLSv1.2",
-      rejectUnauthorized: true,
-    },
-  }),
-  // ---------------------------------------
+  // --- KONFIGURASI SSL KHUSUS RAILWAY ---
+  // Railway memerlukan setting ini agar koneksi secure (SSL) tetap jalan
+  // meskipun sertifikatnya self-signed.
+  ssl: {
+    rejectUnauthorized: false,
+  },
+  // --------------------------------------
 };
 
 // Logika Singleton (Tetap dipertahankan untuk performa):
