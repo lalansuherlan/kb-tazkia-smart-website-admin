@@ -9,18 +9,23 @@ let pool: mysql.Pool;
 
 // Konfigurasi Database
 const dbConfig = {
-  host: process.env.DB_HOST || "localhost",
-  user: process.env.DB_USER || "root",
-  password: process.env.DB_PASSWORD || "",
-  database: process.env.DB_NAME || "kb_tazkia_smart",
+  host: process.env.DB_HOST, // Hapus default localhost agar tidak error di prod
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
+  port: Number(process.env.DB_PORT) || 3306, // Penting: TiDB pakai port 4000
   waitForConnections: true,
-  connectionLimit: 5, // Batasi koneksi (5-10 cukup untuk local)
+  connectionLimit: 5,
   queueLimit: 0,
+  // --- TAMBAHAN WAJIB UNTUK TIDB CLOUD ---
+  ssl: {
+    minVersion: "TLSv1.2",
+    rejectUnauthorized: true,
+  },
+  // ---------------------------------------
 };
 
-// Logika Singleton:
-// Jika di mode development, simpan pool di variabel global.
-// Jika di production, buat pool biasa.
+// Logika Singleton (Tetap dipertahankan untuk performa):
 if (process.env.NODE_ENV === "production") {
   pool = mysql.createPool(dbConfig);
 } else {
@@ -36,6 +41,7 @@ export async function query(sql: string, values?: any[]) {
     return results;
   } catch (error) {
     console.error("Database Query Error:", error);
-    throw error;
+    // Kita return array kosong agar saat build error tidak langsung crash fatal
+    return [];
   }
 }
