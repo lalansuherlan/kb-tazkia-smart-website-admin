@@ -7,7 +7,21 @@ declare global {
 
 let pool: mysql.Pool;
 
+// --- DEBUGGING LOG (Hanya akan muncul di Logs Vercel) ---
+if (process.env.NODE_ENV === "production") {
+  console.log("=== VERCEL DEBUG ===");
+  // Kita cek karakter pertama dan terakhir user
+  const user = process.env.DB_USERNAME || "";
+  console.log(`Username Length: ${user.length}`);
+  console.log(`First Char: ${user.charAt(0)}`); // Jika keluarnya ' (tanda kutip), berarti MASIH ada kutip
+  console.log(`Last Char: ${user.charAt(user.length - 1)}`);
+  console.log(`Raw Username: [${user}]`); // Tanda kurung siku untuk melihat spasi/kutip
+  console.log("====================");
+}
+// ---------------------------------------------------------
+
 // Konfigurasi Database
+const isTiDBCloud = process.env.DB_HOST?.includes("tidbcloud.com") ?? false;
 const dbConfig = {
   host: process.env.DB_HOST, // Hapus default localhost agar tidak error di prod
   user: process.env.DB_USERNAME,
@@ -18,10 +32,12 @@ const dbConfig = {
   connectionLimit: 5,
   queueLimit: 0,
   // --- TAMBAHAN WAJIB UNTUK TIDB CLOUD ---
-  ssl: {
-    minVersion: "TLSv1.2",
-    rejectUnauthorized: true,
-  },
+  ...(isTiDBCloud && {
+    ssl: {
+      minVersion: "TLSv1.2",
+      rejectUnauthorized: true,
+    },
+  }),
   // ---------------------------------------
 };
 
