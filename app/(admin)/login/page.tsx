@@ -32,14 +32,23 @@ export default function LoginPage() {
         return;
       }
 
-      // Store user info in localStorage for client-side reference
+      // Simpan info user untuk UI client-side (opsional tapi bagus untuk 'Hello, User')
       localStorage.setItem("user", JSON.stringify(data.user));
+
+      // PENTING: Refresh router agar Server Components sadar ada cookie baru
+      router.refresh();
+
+      // Redirect ke dashboard
       router.push("/admin/dashboard");
     } catch (err) {
       setError("Terjadi kesalahan. Silakan coba lagi.");
       console.error(err);
     } finally {
-      setLoading(false);
+      // Jangan set loading false jika sukses, agar user tidak melihat form lagi saat redirect
+      // Pindahkan setLoading(false) hanya jika error
+      if (error) {
+        setLoading(false);
+      }
     }
   };
 

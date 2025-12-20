@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { AdminLayoutWrapper } from "@/components/admin-layout-wrapper";
+import { useRouter } from "next/navigation";
 import {
   Users,
   UserPlus,
@@ -11,8 +12,17 @@ import {
   Clock,
   Activity,
   FileText,
+  ShieldCheck,
 } from "lucide-react";
 import Link from "next/link";
+
+// 1. Tambahkan tipe data User
+interface User {
+  id: number;
+  email: string;
+  name: string;
+  role: string;
+}
 
 interface DashboardData {
   ppdb: { total: number; pending: number; approved: number };
@@ -30,7 +40,26 @@ export default function DashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // 2. State untuk User dari LocalStorage
+  const [user, setUser] = useState<User | null>(null);
+  const router = useRouter();
+
   useEffect(() => {
+    // ---------------------------------------------
+    // LOGIC 1: Ambil User dari LocalStorage
+    // ---------------------------------------------
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+    } else {
+      // Jika tidak ada data user di client, kembalikan ke login
+      // (Ini backup client-side jika middleware lolos)
+      router.push("/");
+    }
+
+    // ---------------------------------------------
+    // LOGIC 2: Ambil Data Statistik dari API
+    // ---------------------------------------------
     fetch("/api/admin/dashboard-stats")
       .then((res) => res.json())
       .then((res) => {
@@ -38,21 +67,60 @@ export default function DashboardPage() {
         setLoading(false);
       })
       .catch((err) => console.error(err));
-  }, []);
+  }, [router]);
 
   return (
     <AdminLayoutWrapper>
       <div>
         {/* Header Section */}
-        <div className="mb-8">
+        <div className="mb-6">
           <h1 className="text-3xl font-bold text-gray-800">
             Dashboard Overview
           </h1>
-          <p className="text-gray-500">
-            Selamat datang kembali, Admin! Berikut ringkasan aktivitas sekolah
-            hari ini.
+          <p className="text-gray-500 mt-1">
+            Selamat datang kembali,{" "}
+            <span className="font-semibold text-emerald-600">
+              {user ? user.name : "Admin"}
+            </span>
+            ! Berikut ringkasan aktivitas sekolah hari ini.
           </p>
         </div>
+
+        {/* ------------------------------------------------------- */}
+        {/* DEBUG INFO SECTION (Tampil hanya jika data user ada)     */}
+        {/* ------------------------------------------------------- */}
+        {user && (
+          <div className="mb-8 bg-slate-50 border border-slate-200 rounded-lg p-4 animate-fade-in">
+            <div className="flex items-center gap-2 mb-3 border-b border-slate-200 pb-2">
+              <ShieldCheck size={18} className="text-emerald-600" />
+              <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                Session Debug Info
+              </h3>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 font-mono text-sm">
+              <div>
+                <span className="text-slate-400 text-xs block">User ID</span>
+                <span className="text-slate-700 font-medium">#{user.id}</span>
+              </div>
+              <div>
+                <span className="text-slate-400 text-xs block">Nama</span>
+                <span className="text-emerald-600 font-medium">
+                  {user.name}
+                </span>
+              </div>
+              <div>
+                <span className="text-slate-400 text-xs block">Email</span>
+                <span className="text-slate-700">{user.email}</span>
+              </div>
+              <div>
+                <span className="text-slate-400 text-xs block">Role</span>
+                <span className="bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded text-xs font-bold uppercase inline-block">
+                  {user.role}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">

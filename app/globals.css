@@ -124,3 +124,28 @@
     @apply bg-background text-foreground;
   }
 }
+
+@media print {
+  /* Sembunyikan elemen yang tidak perlu saat nge-print */
+  aside,
+  header,
+  footer,
+  button {
+    display: none !important;
+  }
+
+  /* Pastikan body full width */
+  body,
+  main {
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+  }
+
+  /* Paksa background warna (biar kolom warna S/I/A tercetak) */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}
