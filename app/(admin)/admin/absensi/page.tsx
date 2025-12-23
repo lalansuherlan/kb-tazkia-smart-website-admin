@@ -409,11 +409,27 @@ export default function AbsensiPage() {
 
         {/* FAB SAVE */}
         {dataSiswa.length > 0 && (
-          <div className="fixed bottom-8 right-8 z-40">
+          <div
+            className="
+              fixed z-40
+              /* Posisi Mobile: Tengah Bawah */
+              bottom-6 left-1/2 -translate-x-1/2 w-max
+              
+              /* Posisi Desktop: Kiri Bawah (Di sebelah kanan Sidebar w-64) */
+              md:bottom-8 md:left-72 md:translate-x-0
+            "
+          >
             <button
               onClick={handleSubmit}
               disabled={saving || loading}
-              className="flex items-center gap-2 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white px-6 py-3 rounded-full shadow-lg shadow-emerald-200 transition-all hover:scale-105 active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed"
+              className="
+                flex items-center gap-2 
+                bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 
+                text-white px-6 py-3 rounded-full 
+                shadow-lg shadow-emerald-200 
+                transition-all hover:scale-105 active:scale-95 
+                disabled:opacity-70 disabled:cursor-not-allowed
+              "
             >
               {saving ? (
                 <Loader2 className="animate-spin w-5 h-5" />
