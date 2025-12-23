@@ -243,90 +243,184 @@ export default function PenilaianKolomPage() {
             </div>
 
             {/* 2. TABEL MATRIKS */}
-            <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden mb-8">
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm text-left">
-                  <thead className="bg-emerald-50 text-emerald-900 border-b border-emerald-100">
-                    <tr>
-                      <th className="px-4 py-3 w-[5%] text-center">No</th>
-                      <th className="px-4 py-3 w-[20%]">Nama Siswa</th>
-                      {[indikator1, indikator2, indikator3, indikator4].map(
-                        (ind, i) => (
-                          <th
-                            key={i}
-                            className="px-3 py-3 w-[18.75%] border-l bg-blue-50/50 font-normal italic text-justify align-top leading-snug"
-                          >
-                            {ind || `Indikator ${i + 1}`}
-                          </th>
-                        )
-                      )}
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {students.map((siswa, idx) => (
-                      <tr key={siswa.siswa_id} className="hover:bg-gray-50">
-                        <td className="px-4 py-2 text-center text-gray-500">
-                          {idx + 1}
-                        </td>
-                        <td className="px-4 py-2 font-medium text-gray-800">
-                          {siswa.nama}
-                          {["S", "I", "A"].includes(siswa.status_absensi) && (
-                            <span className="ml-2 text-[10px] bg-red-100 text-red-600 px-1 rounded border border-red-200">
-                              {siswa.status_absensi}
-                            </span>
-                          )}
-                        </td>
-                        {["nilai_1", "nilai_2", "nilai_3", "nilai_4"].map(
-                          (colKey, colIdx) => (
-                            <td
-                              key={colIdx}
-                              className="px-2 py-2 text-center border-l border-dashed"
+            {/* 2. AREA PENILAIAN (RESPONSIVE) */}
+            <div className="mb-8">
+              {/* A. TAMPILAN DESKTOP (TABEL) - Hidden di HP */}
+              <div className="hidden md:block bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm text-left">
+                    <thead className="bg-emerald-50 text-emerald-900 border-b border-emerald-100">
+                      <tr>
+                        <th className="px-4 py-3 w-[5%] text-center">No</th>
+                        <th className="px-4 py-3 w-[20%]">Nama Siswa</th>
+                        {[indikator1, indikator2, indikator3, indikator4].map(
+                          (ind, i) => (
+                            <th
+                              key={i}
+                              className="px-3 py-3 w-[18.75%] border-l bg-blue-50/50 font-normal italic text-justify align-top leading-snug"
                             >
-                              <select
-                                value={siswa[colKey] || ""}
-                                onChange={(e) =>
-                                  handleScoreChange(
-                                    idx,
-                                    colKey as any,
-                                    e.target.value
-                                  )
-                                }
-                                className={`w-full text-center font-bold border rounded p-1 cursor-pointer outline-none
-                                                        ${
-                                                          siswa[colKey] === "SM"
-                                                            ? "bg-emerald-100 text-emerald-700 border-emerald-300"
-                                                            : siswa[colKey] ===
-                                                              "KM"
-                                                            ? "bg-yellow-100 text-yellow-700 border-yellow-300"
-                                                            : siswa[colKey] ===
-                                                              "BM"
-                                                            ? "bg-red-100 text-red-700 border-red-300"
-                                                            : [
-                                                                "S",
-                                                                "I",
-                                                                "A",
-                                                              ].includes(
-                                                                siswa[colKey]
-                                                              )
-                                                            ? "bg-gray-100 text-gray-500"
-                                                            : "bg-white border-gray-300"
-                                                        }
-                                                    `}
-                              >
-                                <option value="">-</option>
-                                {KRITERIA_OPTIONS.map((opt) => (
-                                  <option key={opt.value} value={opt.value}>
-                                    {opt.value}
-                                  </option>
-                                ))}
-                              </select>
-                            </td>
+                              {ind || `Indikator ${i + 1}`}
+                            </th>
                           )
                         )}
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {students.map((siswa, idx) => (
+                        <tr key={siswa.siswa_id} className="hover:bg-gray-50">
+                          <td className="px-4 py-2 text-center text-gray-500">
+                            {idx + 1}
+                          </td>
+                          <td className="px-4 py-2 font-medium text-gray-800">
+                            {siswa.nama}
+                            {["S", "I", "A"].includes(siswa.status_absensi) && (
+                              <span className="ml-2 text-[10px] bg-red-100 text-red-600 px-1 rounded border border-red-200">
+                                {siswa.status_absensi}
+                              </span>
+                            )}
+                          </td>
+                          {["nilai_1", "nilai_2", "nilai_3", "nilai_4"].map(
+                            (colKey, colIdx) => (
+                              <td
+                                key={colIdx}
+                                className="px-2 py-2 text-center border-l border-dashed"
+                              >
+                                <select
+                                  value={siswa[colKey] || ""}
+                                  onChange={(e) =>
+                                    handleScoreChange(
+                                      idx,
+                                      colKey as any,
+                                      e.target.value
+                                    )
+                                  }
+                                  className={`w-full text-center font-bold border rounded p-1 cursor-pointer outline-none
+                                                            ${
+                                                              siswa[colKey] ===
+                                                              "SM"
+                                                                ? "bg-emerald-100 text-emerald-700 border-emerald-300"
+                                                                : siswa[
+                                                                    colKey
+                                                                  ] === "KM"
+                                                                ? "bg-yellow-100 text-yellow-700 border-yellow-300"
+                                                                : siswa[
+                                                                    colKey
+                                                                  ] === "BM"
+                                                                ? "bg-red-100 text-red-700 border-red-300"
+                                                                : [
+                                                                    "S",
+                                                                    "I",
+                                                                    "A",
+                                                                  ].includes(
+                                                                    siswa[
+                                                                      colKey
+                                                                    ]
+                                                                  )
+                                                                ? "bg-gray-100 text-gray-500"
+                                                                : "bg-white border-gray-300"
+                                                            }
+                                                        `}
+                                >
+                                  <option value="">-</option>
+                                  {KRITERIA_OPTIONS.map((opt) => (
+                                    <option key={opt.value} value={opt.value}>
+                                      {opt.value}
+                                    </option>
+                                  ))}
+                                </select>
+                              </td>
+                            )
+                          )}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* B. TAMPILAN MOBILE (KARTU) - Hanya Muncul di HP */}
+              <div className="md:hidden space-y-4">
+                {students.map((siswa, idx) => (
+                  <div
+                    key={siswa.siswa_id}
+                    className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col gap-3"
+                  >
+                    {/* Header Kartu: Nama & No Urut */}
+                    <div className="border-b pb-2 flex justify-between items-center">
+                      <span className="font-bold text-gray-800 text-lg">
+                        <span className="text-emerald-600 mr-2">
+                          {idx + 1}.
+                        </span>
+                        {siswa.nama}
+                      </span>
+                      {["S", "I", "A"].includes(siswa.status_absensi) && (
+                        <span className="text-xs font-bold bg-red-100 text-red-600 px-2 py-1 rounded-full border border-red-200">
+                          {siswa.status_absensi}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* List 4 Indikator Vertikal */}
+                    <div className="space-y-3">
+                      {[
+                        { key: "nilai_1", label: indikator1 || "Indikator 1" },
+                        { key: "nilai_2", label: indikator2 || "Indikator 2" },
+                        { key: "nilai_3", label: indikator3 || "Indikator 3" },
+                        { key: "nilai_4", label: indikator4 || "Indikator 4" },
+                      ].map((item, i) => (
+                        <div
+                          key={i}
+                          className="bg-gray-50 p-3 rounded-lg border border-gray-100"
+                        >
+                          {/* Label Indikator (Agar Guru tau ini nilai untuk apa) */}
+                          <p className="text-xs text-gray-500 font-bold uppercase mb-2 leading-tight">
+                            {item.label}
+                          </p>
+
+                          {/* Dropdown Nilai Full Width */}
+                          <select
+                            value={siswa[item.key] || ""}
+                            onChange={(e) =>
+                              handleScoreChange(
+                                idx,
+                                item.key as any,
+                                e.target.value
+                              )
+                            }
+                            className={`w-full p-2 rounded border font-bold outline-none transition-colors
+                                                    ${
+                                                      siswa[item.key] === "SM"
+                                                        ? "bg-emerald-100 text-emerald-700 border-emerald-300"
+                                                        : siswa[item.key] ===
+                                                          "KM"
+                                                        ? "bg-yellow-100 text-yellow-700 border-yellow-300"
+                                                        : siswa[item.key] ===
+                                                          "BM"
+                                                        ? "bg-red-100 text-red-700 border-red-300"
+                                                        : [
+                                                            "S",
+                                                            "I",
+                                                            "A",
+                                                          ].includes(
+                                                            siswa[item.key]
+                                                          )
+                                                        ? "bg-gray-100 text-gray-500"
+                                                        : "bg-white border-gray-300"
+                                                    }
+                                                `}
+                          >
+                            <option value="">- Pilih Nilai -</option>
+                            {KRITERIA_OPTIONS.map((opt) => (
+                              <option key={opt.value} value={opt.value}>
+                                {opt.label}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
 

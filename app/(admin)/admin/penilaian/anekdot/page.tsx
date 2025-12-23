@@ -550,87 +550,184 @@ export default function AnekdotPage() {
             </div>
 
             {/* Tabel Form */}
-            <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden mb-6">
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm text-left">
-                  <thead className="bg-emerald-50 text-emerald-900 uppercase font-bold">
-                    <tr>
-                      <th className="px-4 py-3 w-10">No</th>
-                      <th className="px-4 py-3 min-w-[200px]">Nama Anak</th>
-                      <th className="px-4 py-3 w-[150px]">Tempat</th>
-                      <th className="px-4 py-3">Peristiwa / Indikator</th>
-                      <th className="px-4 py-3 w-[120px]">Nilai</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {formStudents.map((siswa, idx) => (
-                      <tr key={siswa.siswa_id} className="hover:bg-gray-50">
-                        <td className="px-4 py-3 text-center text-gray-500">
-                          {idx + 1}
-                        </td>
-                        <td className="px-4 py-3 font-medium text-gray-800">
-                          {siswa.nama}
-                        </td>
-                        <td className="px-4 py-3">
-                          <select
-                            value={siswa.tempat}
-                            onChange={(e) =>
-                              handleStudentChange(idx, "tempat", e.target.value)
-                            }
-                            className="w-full border border-gray-300 rounded px-2 py-1.5 text-xs bg-white"
-                          >
-                            {TEMPAT_OPTIONS.map((opt) => (
-                              <option key={opt} value={opt}>
-                                {opt}
-                              </option>
-                            ))}
-                          </select>
-                        </td>
-                        <td className="px-4 py-3">
-                          <textarea
-                            rows={2}
-                            placeholder="Tulis peristiwa..."
-                            value={siswa.peristiwa}
-                            onChange={(e) =>
-                              handleStudentChange(
-                                idx,
-                                "peristiwa",
-                                e.target.value
-                              )
-                            }
-                            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:border-emerald-500 outline-none resize-none"
-                          />
-                        </td>
-                        <td className="px-4 py-3">
-                          <select
-                            value={siswa.kriteria || ""}
-                            onChange={(e) =>
-                              handleStudentChange(
-                                idx,
-                                "kriteria",
-                                e.target.value
-                              )
-                            }
-                            className="w-full font-bold border rounded px-2 py-2 outline-none cursor-pointer"
-                          >
-                            <option value="">- Pilih -</option>
-                            <optgroup label="Perkembangan">
-                              <option value="BM">BM</option>
-                              <option value="KM">KM</option>
-                              <option value="SM">SM</option>
-                              <option value="K">K (Konsisten)</option>
-                            </optgroup>
-                            <optgroup label="Absensi">
-                              <option value="S">S</option>
-                              <option value="I">I</option>
-                              <option value="A">A</option>
-                            </optgroup>
-                          </select>
-                        </td>
+            {/* === AREA INPUT DATA SISWA (RESPONSIVE) === */}
+            <div className="mb-6">
+              {/* A. TAMPILAN DESKTOP / TABLET (Tabel Biasa) - Hidden di HP */}
+              <div className="hidden md:block bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm text-left">
+                    <thead className="bg-emerald-50 text-emerald-900 uppercase font-bold">
+                      <tr>
+                        <th className="px-4 py-3 w-10">No</th>
+                        <th className="px-4 py-3 min-w-[200px]">Nama Anak</th>
+                        <th className="px-4 py-3 w-[150px]">Tempat</th>
+                        <th className="px-4 py-3">Peristiwa / Indikator</th>
+                        <th className="px-4 py-3 w-[120px]">Nilai</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {formStudents.map((siswa, idx) => (
+                        <tr key={siswa.siswa_id} className="hover:bg-gray-50">
+                          <td className="px-4 py-3 text-center text-gray-500">
+                            {idx + 1}
+                          </td>
+                          <td className="px-4 py-3 font-medium text-gray-800">
+                            {siswa.nama}
+                          </td>
+                          <td className="px-4 py-3">
+                            <select
+                              value={siswa.tempat}
+                              onChange={(e) =>
+                                handleStudentChange(
+                                  idx,
+                                  "tempat",
+                                  e.target.value
+                                )
+                              }
+                              className="w-full border border-gray-300 rounded px-2 py-1.5 text-xs bg-white"
+                            >
+                              {TEMPAT_OPTIONS.map((opt) => (
+                                <option key={opt} value={opt}>
+                                  {opt}
+                                </option>
+                              ))}
+                            </select>
+                          </td>
+                          <td className="px-4 py-3">
+                            <textarea
+                              rows={2}
+                              placeholder="Tulis peristiwa..."
+                              value={siswa.peristiwa}
+                              onChange={(e) =>
+                                handleStudentChange(
+                                  idx,
+                                  "peristiwa",
+                                  e.target.value
+                                )
+                              }
+                              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:border-emerald-500 outline-none resize-none"
+                            />
+                          </td>
+                          <td className="px-4 py-3">
+                            <select
+                              value={siswa.kriteria || ""}
+                              onChange={(e) =>
+                                handleStudentChange(
+                                  idx,
+                                  "kriteria",
+                                  e.target.value
+                                )
+                              }
+                              className="w-full font-bold border rounded px-2 py-2 outline-none cursor-pointer"
+                            >
+                              <option value="">- Pilih -</option>
+                              <optgroup label="Perkembangan">
+                                <option value="BM">BM</option>
+                                <option value="KM">KM</option>
+                                <option value="SM">SM</option>
+                                <option value="K">K (Konsisten)</option>
+                              </optgroup>
+                              <optgroup label="Absensi">
+                                <option value="S">S</option>
+                                <option value="I">I</option>
+                                <option value="A">A</option>
+                              </optgroup>
+                            </select>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* B. TAMPILAN MOBILE (Card View) - Hanya Muncul di HP */}
+              <div className="md:hidden space-y-4">
+                {formStudents.map((siswa, idx) => (
+                  <div
+                    key={siswa.siswa_id}
+                    className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col gap-3"
+                  >
+                    {/* Header Kartu: Nama Siswa */}
+                    <div className="border-b pb-2 flex justify-between items-center">
+                      <span className="font-bold text-gray-800 text-lg">
+                        <span className="text-emerald-600 mr-2">
+                          {idx + 1}.
+                        </span>
+                        {siswa.nama}
+                      </span>
+                    </div>
+
+                    {/* Baris 1: Tempat & Nilai (Sebelahan biar hemat tempat) */}
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-xs font-bold text-gray-500 mb-1 block uppercase">
+                          Tempat
+                        </label>
+                        <select
+                          value={siswa.tempat}
+                          onChange={(e) =>
+                            handleStudentChange(idx, "tempat", e.target.value)
+                          }
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2.5 bg-white font-medium text-gray-700"
+                        >
+                          {TEMPAT_OPTIONS.map((opt) => (
+                            <option key={opt} value={opt}>
+                              {opt}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="text-xs font-bold text-gray-500 mb-1 block uppercase">
+                          Nilai / Kriteria
+                        </label>
+                        <select
+                          value={siswa.kriteria || ""}
+                          onChange={(e) =>
+                            handleStudentChange(idx, "kriteria", e.target.value)
+                          }
+                          className={`w-full border rounded-lg px-3 py-2.5 font-bold outline-none
+                                    ${
+                                      siswa.kriteria
+                                        ? "bg-emerald-50 border-emerald-300 text-emerald-700"
+                                        : "bg-white border-gray-300"
+                                    }
+                                  `}
+                        >
+                          <option value="">- Pilih -</option>
+                          <optgroup label="Perkembangan">
+                            <option value="BM">BM</option>
+                            <option value="KM">KM</option>
+                            <option value="SM">SM</option>
+                            <option value="K">K</option>
+                          </optgroup>
+                          <optgroup label="Absensi">
+                            <option value="S">S</option>
+                            <option value="I">I</option>
+                            <option value="A">A</option>
+                          </optgroup>
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Baris 2: Peristiwa (Full Width agar leluasa ngetik) */}
+                    <div>
+                      <label className="text-xs font-bold text-gray-500 mb-1 block uppercase">
+                        Peristiwa / Indikator
+                      </label>
+                      <textarea
+                        rows={3}
+                        placeholder="Ceritakan peristiwa yang terjadi..."
+                        value={siswa.peristiwa}
+                        onChange={(e) =>
+                          handleStudentChange(idx, "peristiwa", e.target.value)
+                        }
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-400 outline-none"
+                      />
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
 
