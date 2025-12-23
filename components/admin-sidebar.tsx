@@ -32,6 +32,15 @@ const menuStructure = [
     ],
   },
 
+  {
+    label: "Penilaian",
+    icon: "⭐",
+    submenu: [
+      { href: "/admin/penilaian/anekdot", label: "Catatan Anekdot" },
+      { href: "/admin/penilaian/kolom", label: "Ceklis / Kolom" }, // Disiapkan utk nanti
+    ],
+  },
+
   // GROUP 3
   {
     label: "Penerimaan (PPDB)",
