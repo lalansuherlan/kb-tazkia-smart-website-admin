@@ -36,6 +36,7 @@ export async function GET(request: Request) {
     const sql = `
       SELECT 
         s.id as siswa_id,
+        s.nis,                -- <--- TAMBAHKAN BARIS INI (PENTING!)
         s.full_name as nama,
         s.program_name as kelas_siswa,
         abs.status as status_absensi
