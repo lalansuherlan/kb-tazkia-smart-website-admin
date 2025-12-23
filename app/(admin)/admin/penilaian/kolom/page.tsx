@@ -181,7 +181,7 @@ export default function PenilaianKolomPage() {
                 ))}
               </select>
             ) : (
-              <div className="bg-indigo-50 px-4 py-2 rounded-lg border border-indigo-100 text-indigo-700 font-bold flex items-center gap-2">
+              <div className="hidden bg-indigo-50 px-4 py-2 rounded-lg border border-indigo-100 text-indigo-700 font-bold flex items-center gap-2">
                 <UserCheck size={20} />{" "}
                 <span>Mode Guru {selectedClass && `(${selectedClass})`}</span>
               </div>

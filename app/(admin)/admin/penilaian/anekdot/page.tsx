@@ -30,7 +30,7 @@ const KRITERIA_OPTIONS = [
     label: "SM (Sering Muncul)",
     color: "bg-emerald-100 text-emerald-700",
   },
-  { value: "K", label: "K (Konsisten)", color: "bg-blue-100 text-blue-700" }, // Baru
+  { value: "K", label: "K (Konsisten)", color: "bg-blue-100 text-blue-700" },
 
   // Status Absensi (Tetap Ada)
   {
@@ -193,10 +193,6 @@ export default function AnekdotPage() {
 
   const handleStartAssessment = () => {
     // Logic Merge:
-    // Kita loop berdasarkan ID yang DIPILIH (Selected).
-    // Jika ID tersebut sudah ada di form sebelumnya (formStudents), kita pakai data lama (agar tulisan tidak hilang).
-    // Jika ID tersebut baru dicentang, kita ambil data default/baru.
-
     const mappedForForm = selectedStudentIds.map((selectedId) => {
       // Cek apakah siswa ini sudah ada di form yang sedang diedit?
       const existingFormData = formStudents.find(
@@ -259,15 +255,14 @@ export default function AnekdotPage() {
 
     setSaving(true);
 
-    // 👇 PASTIKAN 'usia' DAN 'jumlahKegiatan' ADA DI SINI
     const payload = {
       tanggal,
       kelas: selectedClass,
       minggu_ke: mingguKe,
-      jumlah_kegiatan: jumlahKegiatan, // Pastikan ini ada
-      usia: usia, // Pastikan ini ada (JANGAN LUPA)
+      jumlah_kegiatan: jumlahKegiatan,
+      usia: usia,
       kegiatan: kegiatan,
-      details: formStudents, // Kirim siswa yang sedang diedit
+      details: formStudents,
     };
 
     try {
@@ -277,11 +272,10 @@ export default function AnekdotPage() {
         body: JSON.stringify(payload),
       });
 
-      const json = await res.json(); // Baca respon json untuk cek error
+      const json = await res.json();
 
       if (res.ok) {
         alert("✅ Data Anekdot Berhasil Disimpan!");
-        // Refresh data agar status terupdate
         fetchData();
       } else {
         console.error(json);
@@ -328,7 +322,7 @@ export default function AnekdotPage() {
                 </select>
               </div>
             ) : (
-              <div className="bg-indigo-50 p-2 px-4 rounded-xl border border-indigo-100 text-indigo-700 font-bold flex items-center gap-2">
+              <div className="hidden bg-indigo-50 p-2 px-4 rounded-xl border border-indigo-100 text-indigo-700 font-bold flex items-center gap-2">
                 <UserCheck size={20} />
                 <span>Mode Guru {selectedClass && `(${selectedClass})`}</span>
               </div>
@@ -387,37 +381,36 @@ export default function AnekdotPage() {
                 </div>
               </div>
 
-              {/* Grid Siswa */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {/* Grid Siswa - Added mb-40 for scrolling space */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-8">
                 {allStudents.map((siswa) => {
                   const isSelected = selectedStudentIds.includes(
                     siswa.siswa_id
                   );
-                  const hasData = !!siswa.kriteria; // Cek apakah sudah dinilai sebelumnya
+                  const hasData = !!siswa.kriteria;
 
                   return (
                     <div
                       key={siswa.siswa_id}
                       onClick={() => toggleSelection(siswa.siswa_id)}
                       className={`
-                                    relative p-4 rounded-xl border-2 cursor-pointer transition-all hover:shadow-md
-                                    ${
-                                      isSelected
-                                        ? "border-emerald-500 bg-emerald-50"
-                                        : "border-gray-100 bg-white hover:border-emerald-200"
-                                    }
-                                `}
+                        relative p-4 rounded-xl border-2 cursor-pointer transition-all hover:shadow-md
+                        ${
+                          isSelected
+                            ? "border-emerald-500 bg-emerald-50"
+                            : "border-gray-100 bg-white hover:border-emerald-200"
+                        }
+                    `}
                     >
                       <div className="flex items-start gap-3">
-                        {/* Avatar Initials */}
                         <div
                           className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm
-                                        ${
-                                          isSelected
-                                            ? "bg-emerald-500 text-white"
-                                            : "bg-gray-100 text-gray-500"
-                                        }
-                                    `}
+                            ${
+                              isSelected
+                                ? "bg-emerald-500 text-white"
+                                : "bg-gray-100 text-gray-500"
+                            }
+                        `}
                         >
                           {siswa.nama.substring(0, 2).toUpperCase()}
                         </div>
@@ -429,7 +422,6 @@ export default function AnekdotPage() {
                             NIS: {siswa.nis || "-"}
                           </p>
 
-                          {/* Status Indicator */}
                           <div className="mt-2 flex gap-1">
                             {hasData && (
                               <span className="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">
@@ -445,7 +437,6 @@ export default function AnekdotPage() {
                         </div>
                       </div>
 
-                      {/* Check Icon */}
                       {isSelected && (
                         <div className="absolute top-3 right-3 text-emerald-600">
                           <CheckCircle2
@@ -460,14 +451,26 @@ export default function AnekdotPage() {
                 })}
               </div>
 
-              {/* Action Button */}
-              <div className="fixed bottom-8 left-8 md:left-72 z-40">
+              {/* 👇 TOMBOL STATIC (DI BAWAH KARTU) */}
+              <div className="flex justify-center pb-10">
                 <button
                   onClick={handleStartAssessment}
                   disabled={selectedStudentIds.length === 0}
-                  className="flex items-center gap-2 bg-emerald-600 text-white px-8 py-3 rounded-full shadow-lg hover:bg-emerald-700 transition-all font-bold disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="
+                  flex items-center justify-center gap-2 
+                  w-full md:w-auto min-w-[200px]
+                  bg-emerald-600 text-white px-8 py-4 rounded-xl 
+                  shadow-lg shadow-emerald-200
+                  hover:bg-emerald-700 hover:scale-105 transition-all 
+                  font-bold text-lg disabled:opacity-50 disabled:cursor-not-allowed
+                "
                 >
                   <span>Mulai Penilaian</span>
+                  {selectedStudentIds.length > 0 && (
+                    <span className="bg-white text-emerald-600 text-xs px-2 py-0.5 rounded-full font-extrabold ml-1">
+                      {selectedStudentIds.length}
+                    </span>
+                  )}
                   <ArrowRight size={20} />
                 </button>
               </div>
@@ -493,7 +496,6 @@ export default function AnekdotPage() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                {/* Kolom 1: Minggu Ke */}
                 <div>
                   <label className="block text-sm font-medium text-gray-600 mb-1">
                     Minggu Ke-
@@ -505,8 +507,6 @@ export default function AnekdotPage() {
                     className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-400 outline-none"
                   />
                 </div>
-
-                {/* Kolom 2: Jumlah Kegiatan */}
                 <div>
                   <label className="block text-sm font-medium text-gray-600 mb-1">
                     Jumlah Kegiatan
@@ -519,8 +519,6 @@ export default function AnekdotPage() {
                     className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-400 outline-none"
                   />
                 </div>
-
-                {/* Kolom 3: Usia (BARU) */}
                 <div>
                   <label className="block text-sm font-medium text-gray-600 mb-1">
                     Usia Anak
@@ -533,8 +531,6 @@ export default function AnekdotPage() {
                     className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-400 outline-none"
                   />
                 </div>
-
-                {/* Kolom 4: Nama Kegiatan */}
                 <div className="md:col-span-1">
                   <label className="block text-sm font-medium text-gray-600 mb-1">
                     Topik / Tema
@@ -549,8 +545,7 @@ export default function AnekdotPage() {
               </div>
             </div>
 
-            {/* Tabel Form */}
-            {/* === AREA INPUT DATA SISWA (RESPONSIVE) === */}
+            {/* AREA INPUT DATA SISWA (RESPONSIVE) */}
             <div className="mb-6">
               {/* A. TAMPILAN DESKTOP / TABLET (Tabel Biasa) - Hidden di HP */}
               <div className="hidden md:block bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
@@ -731,7 +726,7 @@ export default function AnekdotPage() {
               </div>
             </div>
 
-            {/* Legend (Keterangan) UPDATE */}
+            {/* Legend (Keterangan) */}
             <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-8">
               <h4 className="text-xs font-bold text-blue-800 mb-2 uppercase tracking-wider">
                 Legenda Kriteria Penilaian:
@@ -753,10 +748,8 @@ export default function AnekdotPage() {
               </div>
             </div>
 
-            {/* BUTTONS (Tetap) */}
+            {/* BUTTONS */}
             <div className="mt-8 mb-20 flex flex-row justify-start items-center gap-4">
-              {/* ... (Tombol Simpan & Cetak sama seperti sebelumnya) ... */}
-              {/* Pastikan tombol Simpan memanggil handleSubmit yang sudah menyertakan 'usia' di payload */}
               <button
                 onClick={handleSubmit}
                 disabled={saving}
