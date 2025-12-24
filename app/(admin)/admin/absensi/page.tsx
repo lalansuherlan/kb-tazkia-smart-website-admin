@@ -242,7 +242,7 @@ export default function AbsensiPage() {
               </div>
             ) : (
               // Tampilan untuk GURU (Hanya Badge, bukan Dropdown)
-              <div className="bg-indigo-50 p-2 px-4 rounded-xl border border-indigo-100 text-indigo-700 font-bold flex items-center gap-2">
+              <div className="hidden bg-indigo-50 p-2 px-4 rounded-xl border border-indigo-100 text-indigo-700 font-bold flex items-center gap-2">
                 <UserCheck size={20} />
                 <span>Mode Guru</span>
               </div>

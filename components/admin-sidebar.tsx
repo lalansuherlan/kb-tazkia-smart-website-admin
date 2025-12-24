@@ -15,6 +15,7 @@ const menuStructure = [
     submenu: [
       { href: "/admin/landing-editor", label: "Content Beranda" },
       { href: "/admin/content", label: "Program & Galeri" },
+      { href: "/admin/announcements", label: "Info & Agenda" },
       { href: "/admin/feedback", label: "Feedback & Testimoni" },
     ],
   },
