@@ -1,9 +1,8 @@
 import { query } from "@/lib/db";
-import { RowDataPacket } from "mysql2";
-import { GalleryClient } from "@/components/gallery-client"; // Import komponen client baru
+import { GalleryClient } from "@/components/gallery-client";
 
-// Interface (Harus sama strukturnya agar TypeScript senang)
-interface GalleryItem extends RowDataPacket {
+// ✅ Hapus 'extends RowDataPacket'. Cukup interface biasa.
+interface GalleryItem {
   id: number;
   title: string;
   description: string;
@@ -15,8 +14,14 @@ interface GalleryItem extends RowDataPacket {
 // Fetch Data (Server Side)
 async function getGalleryData() {
   try {
+    // Query ini AMAN untuk PostgreSQL (Standard SQL)
     const sql = `SELECT * FROM gallery_images ORDER BY order_index ASC, id DESC LIMIT 6`;
+
+    // Casting hasil query ke array interface kita
     const rows = (await query(sql)) as GalleryItem[];
+
+    // Serialisasi JSON penting untuk mengubah objek Date (Postgres) menjadi String
+    // agar bisa dikirim ke Client Component tanpa error "Non-serializable data"
     return JSON.parse(JSON.stringify(rows));
   } catch (error) {
     console.error("Gagal mengambil data galeri:", error);

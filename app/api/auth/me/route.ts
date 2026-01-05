@@ -4,7 +4,7 @@ import { headers } from "next/headers";
 
 export async function GET(request: Request) {
   try {
-    // 👇 WAJIB ADA 'await' di Next.js versi baru
+    // 👇 WAJIB ADA 'await' di Next.js versi baru (Next.js 15+)
     const headersList = await headers();
     const userId = headersList.get("x-user-id");
 
@@ -15,8 +15,10 @@ export async function GET(request: Request) {
       );
     }
 
-    // Ambil data user
-    const sql = `SELECT id, name, role FROM admin_users WHERE id = ?`;
+    // --- PERBAIKAN POSTGRESQL ---
+    // Ganti ? menjadi $1
+    const sql = `SELECT id, name, role, photo_url FROM admin_users WHERE id = $1`;
+
     const rows: any = await query(sql, [userId]);
 
     if (rows.length === 0) {
@@ -26,6 +28,7 @@ export async function GET(request: Request) {
       );
     }
 
+    // Return data user (saya tambahkan photo_url juga agar lengkap)
     return NextResponse.json({ success: true, data: rows[0] });
   } catch (error) {
     console.error("Error Auth Me:", error);

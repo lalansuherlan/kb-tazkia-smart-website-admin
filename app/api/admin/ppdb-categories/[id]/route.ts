@@ -14,11 +14,14 @@ export async function PUT(
     const { id } = await params;
     const body = await request.json();
 
+    // --- PERBAIKAN UTAMA (PostgreSQL Syntax) ---
+    // Ganti ? menjadi $1, $2 ... sampai $16
+    // Perhatikan urutannya harus sama persis dengan array parameter di bawah
     const sql = `
       UPDATE ppdb_categories SET 
-      name=?, age_range=?, emoji=?, color_class=?, short_desc=?, full_desc=?, 
-      objectives=?, curriculum=?, facilities=?, schedule=?, costs=?, requirements=?, benefits=?, admission=?, order_index=?
-      WHERE id=?
+      name=$1, age_range=$2, emoji=$3, color_class=$4, short_desc=$5, full_desc=$6, 
+      objectives=$7, curriculum=$8, facilities=$9, schedule=$10, costs=$11, requirements=$12, benefits=$13, admission=$14, order_index=$15
+      WHERE id=$16
     `;
 
     await query(sql, [
@@ -36,12 +39,13 @@ export async function PUT(
       JSON.stringify(body.requirements || []),
       JSON.stringify(body.benefits || []),
       body.admission,
-      body.order_index,
-      id,
+      Number(body.order_index), // $15
+      id, // $16 (WHERE clause)
     ]);
 
     return NextResponse.json({ message: "Updated successfully" });
   } catch (error) {
+    console.error("PUT Category Error:", error); // Log error
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }
@@ -54,10 +58,16 @@ export async function DELETE(
     const token = await getAuthCookie();
     if (!token || !verifyToken(token))
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
     const { id } = await params;
-    await query("DELETE FROM ppdb_categories WHERE id = ?", [id]);
+
+    // --- PERBAIKAN DELETE ---
+    // Ganti ? menjadi $1
+    await query("DELETE FROM ppdb_categories WHERE id = $1", [id]);
+
     return NextResponse.json({ message: "Deleted successfully" });
   } catch (error) {
+    console.error("DELETE Category Error:", error); // Log error
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }

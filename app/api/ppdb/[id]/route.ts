@@ -8,7 +8,8 @@ export async function GET(
   try {
     const { id } = await params;
 
-    const sql = `SELECT * FROM ppdb_categories WHERE id = ?`;
+    // --- PERBAIKAN 1: Placeholder SQL ($1) ---
+    const sql = `SELECT * FROM ppdb_categories WHERE id = $1`;
     const rows: any = await query(sql, [id]);
 
     if (rows.length === 0) {
@@ -17,13 +18,23 @@ export async function GET(
 
     const program = rows[0];
 
-    // Helper untuk parsing JSON dengan aman (karena di DB bentuknya string)
-    const safeParse = (data: string, fallback: any) => {
-      try {
-        return data ? JSON.parse(data) : fallback;
-      } catch (e) {
-        return fallback;
+    // --- PERBAIKAN 2: Smart JSON Parser ---
+    // Postgres driver seringkali otomatis mem-parse JSONB menjadi Object.
+    // Kita harus cek tipe datanya dulu agar tidak "Double Parse".
+    const safeParse = (data: any, fallback: any) => {
+      // Jika sudah berupa object (karena driver Postgres otomatis parse), kembalikan langsung
+      if (typeof data === "object" && data !== null) {
+        return data;
       }
+      // Jika masih string, baru kita parse
+      if (typeof data === "string") {
+        try {
+          return JSON.parse(data);
+        } catch (e) {
+          return fallback;
+        }
+      }
+      return fallback;
     };
 
     // Format data agar sesuai struktur komponen React
@@ -35,7 +46,7 @@ export async function GET(
       schedule: safeParse(program.schedule, {}),
       costs: safeParse(program.costs, {}),
       requirements: safeParse(program.requirements, []),
-      benefits: safeParse(program.benefits, []), // Menggunakan kolom benefits yg sudah ada
+      benefits: safeParse(program.benefits, []),
     };
 
     return NextResponse.json(formattedProgram);

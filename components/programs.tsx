@@ -1,9 +1,8 @@
 import { query } from "@/lib/db";
 import { Card } from "@/components/ui/card";
-import { RowDataPacket } from "mysql2";
 
 // 1. Definisi Tipe Data (Sesuai kolom database baru)
-interface ProgramItem extends RowDataPacket {
+interface ProgramItem {
   id: number;
   name: string;
   description: string;

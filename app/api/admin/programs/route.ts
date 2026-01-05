@@ -2,6 +2,7 @@ import { type NextRequest, NextResponse } from "next/server";
 import { query } from "@/lib/db";
 import { getAuthCookie, verifyToken } from "@/lib/auth";
 
+// GET: Ambil Data (Aman, tidak ada parameter)
 export async function GET(request: NextRequest) {
   try {
     // Validasi Token Admin
@@ -10,7 +11,6 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Ambil data lengkap termasuk warna dan emoji background
     const results = await query(
       "SELECT * FROM programs ORDER BY order_index ASC"
     );
@@ -24,6 +24,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
+// POST: Tambah Data
 export async function POST(request: NextRequest) {
   try {
     const token = await getAuthCookie();
@@ -32,22 +33,22 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    // 🟢 UPDATE: Ambil data kolom baru dari body request
     const { name, description, icon, bg_emoji, color_class, order_index } =
       body;
 
-    // 🟢 UPDATE: Masukkan kolom baru ke database
+    // --- PERBAIKAN UTAMA (PostgreSQL Syntax) ---
+    // Ganti (?, ?, ?, ?, ?, ?) menjadi ($1, $2, $3, $4, $5, $6)
     await query(
       `INSERT INTO programs 
        (name, description, icon, bg_emoji, color_class, order_index) 
-       VALUES (?, ?, ?, ?, ?, ?)`,
+       VALUES ($1, $2, $3, $4, $5, $6)`,
       [
         name,
         description,
         icon,
         bg_emoji || "✨", // Default jika kosong
         color_class || "from-green-100 to-emerald-100", // Default warna
-        order_index || 0,
+        Number(order_index || 0), // Pastikan tipe number
       ]
     );
 

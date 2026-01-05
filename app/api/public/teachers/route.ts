@@ -3,8 +3,9 @@ import { query } from "@/lib/db";
 
 export async function GET() {
   try {
-    // KITA UBAH QUERY-NYA JADI LEBIH SEDERHANA
-    // Hapus logika 'FIELD' yang mungkin bikin error
+    // Query ini sudah AMAN untuk PostgreSQL (Standard SQL).
+    // Tidak menggunakan parameter input, jadi tidak perlu $1.
+    // ORDER BY role ASC akan mengurutkan: Admin (A) dulu, baru Teacher (T).
     const sql = `
       SELECT id, name, role, photo_url 
       FROM admin_users 
@@ -12,17 +13,15 @@ export async function GET() {
       ORDER BY role ASC, name ASC
     `;
 
-    // Debugging: Cek apakah query jalan
     console.log("Menjalankan Query Guru...");
 
     const rows = await query(sql);
 
-    console.log("Data Guru berhasil diambil:", rows); // Cek hasil di terminal
+    // console.log("Data Guru berhasil diambil:", rows); // Uncomment jika ingin lihat data mentah
 
     return NextResponse.json(rows);
   } catch (error: any) {
-    // PENTING: Tampilkan error asli di terminal agar ketahuan salahnya apa
-    console.error("❌ ERROR API GURU:", error.message);
+    console.error("❌ ERROR API GURU:", error); // Log error lengkap
 
     return NextResponse.json(
       { error: "Server Error", details: error.message },

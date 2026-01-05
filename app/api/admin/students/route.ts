@@ -10,13 +10,14 @@ export async function GET(request: NextRequest) {
     if (!user)
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    // Cek Role User dari Database (untuk keamanan ganda)
+    // 1. Cek Role User (Fix: Ganti ? jadi $1)
     const userData: any = await query(
-      "SELECT role FROM admin_users WHERE id = ?",
+      "SELECT role FROM admin_users WHERE id = $1",
       [user.userId]
     );
     const role = userData[0]?.role;
 
+    // Query Dasar
     let sql = `
       SELECT 
         s.*, 
@@ -27,20 +28,21 @@ export async function GET(request: NextRequest) {
 
     const params: any[] = [];
 
-    // LOGIKA PEMISAHAN DATA:
-    // Jika yang login adalah GURU (teacher), tambahkan filter WHERE teacher_id = ...
+    // 2. LOGIKA PEMISAHAN DATA
     if (role === "teacher") {
-      sql += " WHERE s.teacher_id = ? AND s.status = 'active'";
+      // Fix: Ganti ? jadi $1
+      // Karena params awalnya kosong [], maka item pertama yang di-push pasti adalah $1
+      sql += " WHERE s.teacher_id = $1 AND s.status = 'active'";
       params.push(user.userId);
-    } else {
-      // Jika Admin, tampilkan semua tapi urutkan biar rapi
-      sql += " ORDER BY s.class_name ASC, s.full_name ASC";
     }
+
+    // 3. ORDER BY (Sebaiknya ditaruh di luar if/else agar Guru juga dapat data urut)
+    sql += " ORDER BY s.class_name ASC, s.full_name ASC";
 
     const results = await query(sql, params);
     return NextResponse.json(results);
   } catch (error) {
-    console.error(error);
+    console.error("GET Students Error:", error);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }

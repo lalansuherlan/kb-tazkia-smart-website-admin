@@ -6,12 +6,13 @@ import { getAuthCookie, verifyToken, hashPassword } from "@/lib/auth";
 export async function GET() {
   try {
     const token = await getAuthCookie();
-    // Validasi token (Opsional: tergantung kebijakan Anda apakah endpoint ini perlu login)
+    // Validasi token
     if (!token || !verifyToken(token)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // PERBAIKAN: Tambahkan 'photo_url' di SELECT atau gunakan (*)
+    // Query Standar (Aman untuk Postgres & MySQL)
+    // Tidak perlu placeholder karena tidak ada parameter WHERE
     const sql = `
       SELECT id, name, email, role, created_at, photo_url 
       FROM admin_users 
@@ -20,7 +21,6 @@ export async function GET() {
 
     const users = await query(sql);
 
-    // Tambahkan header no-store agar data tidak di-cache browser
     return NextResponse.json(users, {
       headers: { "Cache-Control": "no-store, max-age=0" },
     });
@@ -42,7 +42,7 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { email, name, role, password, photo_url } = body; // Ambil photo_url
+    const { email, name, role, password, photo_url } = body;
 
     // Cek kelengkapan data wajib
     if (!email || !name || !password || !role) {
@@ -54,16 +54,32 @@ export async function POST(request: Request) {
 
     const passwordHash = await hashPassword(password);
 
-    // Masukkan photo_url ke database
-    // Gunakan (photo_url || null) untuk mencegah undefined
+    // --- PERBAIKAN UTAMA (PostgreSQL Syntax) ---
+    // 1. Ganti ? menjadi $1, $2, $3, $4, $5
     await query(
-      "INSERT INTO admin_users (email, name, role, password_hash, photo_url) VALUES (?, ?, ?, ?, ?)",
-      [email, name, role, passwordHash, photo_url || null]
+      "INSERT INTO admin_users (email, name, role, password_hash, photo_url) VALUES ($1, $2, $3, $4, $5)",
+      [
+        email,
+        name,
+        role,
+        passwordHash,
+        photo_url || null, // Handle undefined
+      ]
     );
 
     return NextResponse.json({ message: "User created successfully" });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error creating user:", error);
+
+    // --- TAMBAHAN: Handle Duplicate Email ---
+    // Kode '23505' adalah kode error Postgres untuk Unique Violation
+    if (error.code === "23505") {
+      return NextResponse.json(
+        { error: "Email sudah terdaftar!" },
+        { status: 409 } // 409 Conflict
+      );
+    }
+
     return NextResponse.json(
       { error: "Internal Server Error" },
       { status: 500 }

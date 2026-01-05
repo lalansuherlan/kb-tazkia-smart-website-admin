@@ -4,7 +4,7 @@ import { getAuthCookie, verifyToken } from "@/lib/auth";
 
 export async function GET(request: NextRequest) {
   try {
-    // Ambil semua konten halaman
+    // Ambil semua konten halaman (Query standar, aman)
     const results = await query("SELECT * FROM page_content");
     return NextResponse.json(results);
   } catch (error) {
@@ -29,17 +29,21 @@ export async function POST(request: NextRequest) {
     // 2. Ambil image_url dari body
     const { page_name, section_name, title, content, image_url } = body;
 
-    // 3. Update Query SQL untuk menyertakan image_url
+    // 3. Update Query SQL untuk PostgreSQL
+    // - Gunakan $1, $2, dst.
+    // - Gunakan ON CONFLICT (page_name, section_name) karena itu unique key-nya
+    // - Gunakan EXCLUDED.nama_kolom untuk mengambil nilai baru
     const sql = `
       INSERT INTO page_content (page_name, section_name, title, content, image_url) 
-      VALUES (?, ?, ?, ?, ?) 
-      ON DUPLICATE KEY UPDATE 
-      title = VALUES(title), 
-      content = VALUES(content),
-      image_url = VALUES(image_url)
+      VALUES ($1, $2, $3, $4, $5) 
+      ON CONFLICT (page_name, section_name) 
+      DO UPDATE SET 
+        title = EXCLUDED.title, 
+        content = EXCLUDED.content,
+        image_url = EXCLUDED.image_url
     `;
 
-    // 4. Masukkan parameter (image_url || null agar tidak undefined)
+    // 4. Masukkan parameter (sesuai urutan $1 s/d $5)
     await query(sql, [
       page_name,
       section_name,

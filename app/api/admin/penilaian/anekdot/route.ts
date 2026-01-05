@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { query } from "@/lib/db";
 
-// GET: Ambil Data Siswa + Integrasi Absensi + Data Anekdot (Logic Baru)
+// GET: Ambil Data Siswa + Integrasi Absensi + Data Anekdot
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const tanggal = searchParams.get("tanggal");
@@ -21,49 +21,48 @@ export async function GET(request: Request) {
     let filterCondition = "";
     let filterParam = "";
 
+    // Kita menggunakan params array untuk query utama.
+    // Urutan params saat ini: [tanggal, academicYear, academicYear] -> index $1, $2, $3
+    // Maka param tambahan (filterParam) harus menjadi $4
     if (teacherId) {
-      filterCondition = "AND s.teacher_id = ?";
+      filterCondition = "AND s.teacher_id = $4";
       filterParam = teacherId;
     } else if (kelas) {
-      filterCondition = "AND s.program_name = ?";
+      filterCondition = "AND s.program_name = $4";
       filterParam = kelas;
     } else {
       return NextResponse.json({ success: true, data: [] });
     }
 
-    // 2. QUERY UTAMA: Ambil Siswa & Absensi SAJA (Jangan ambil 'pad' dulu)
-    // Kita hapus pad.id, pad.tempat, dll agar tidak error
+    // 2. QUERY UTAMA
     const sql = `
       SELECT 
         s.id as siswa_id,
-        s.nis,                -- <--- TAMBAHKAN BARIS INI (PENTING!)
+        s.nis,
         s.full_name as nama,
         s.program_name as kelas_siswa,
         abs.status as status_absensi
       FROM students s
       LEFT JOIN absensi abs 
-        ON s.id = abs.siswa_id AND abs.tanggal = ? AND abs.academic_year = ?
+        ON s.id = abs.siswa_id AND abs.tanggal = $1 AND abs.academic_year = $2
       WHERE s.status = 'active'
-        AND s.academic_year = ?
+        AND s.academic_year = $3
         ${filterCondition}
       ORDER BY s.full_name ASC
     `;
 
     const params = [tanggal, academicYear, academicYear, filterParam];
-    // Cast ke any[] agar TS tidak rewel
     const rows = (await query(sql, params)) as any[];
 
-    // Jika tidak ada siswa, return kosong
     if (rows.length === 0) {
       return NextResponse.json({ success: true, header: null, data: [] });
     }
 
     // 3. DETEKSI KELAS & AMBIL HEADER ANEKDOT
-    // Kita ambil nama kelas dari siswa pertama yang ditemukan
     const detectedClass = rows[0].kelas_siswa;
 
-    // Cari Header berdasarkan Tanggal & Kelas yang terdeteksi
-    const headerSql = `SELECT * FROM penilaian_anekdot WHERE tanggal = ? AND kelas = ? LIMIT 1`;
+    // Postgres: Gunakan $1, $2
+    const headerSql = `SELECT * FROM penilaian_anekdot WHERE tanggal = $1 AND kelas = $2 LIMIT 1`;
     const existingHeader = (await query(headerSql, [
       tanggal,
       detectedClass,
@@ -77,22 +76,18 @@ export async function GET(request: Request) {
       headerId = (existingHeader[0] as any).id;
     }
 
-    // 4. AMBIL DETAIL ANEKDOT (Jika Header Ditemukan)
+    // 4. AMBIL DETAIL ANEKDOT
     let details: any[] = [];
     if (headerId > 0) {
-      const detailSql = `SELECT * FROM penilaian_anekdot_detail WHERE penilaian_id = ?`;
+      const detailSql = `SELECT * FROM penilaian_anekdot_detail WHERE penilaian_id = $1`;
       details = (await query(detailSql, [headerId])) as any[];
     }
 
-    // 5. GABUNGKAN DATA (MERGE) VIA JAVASCRIPT
-    // Kita loop data siswa, lalu cari apakah dia punya nilai di 'details'
+    // 5. GABUNGKAN DATA
     const finalData = rows.map((row: any) => {
-      // Cari detail nilai untuk siswa ini
       const detail = details.find((d: any) => d.siswa_id === row.siswa_id);
-
       return {
         ...row,
-        // Jika ada detail di DB, pakai itu. Jika tidak, null/kosong.
         detail_id: detail ? detail.id : null,
         tempat: detail ? detail.tempat : null,
         peristiwa: detail ? detail.peristiwa : null,
@@ -103,7 +98,7 @@ export async function GET(request: Request) {
     return NextResponse.json({
       success: true,
       header: headerData,
-      data: finalData, // Kirim data yang sudah digabung
+      data: finalData,
       detected_class: detectedClass,
     });
   } catch (error) {
@@ -112,7 +107,7 @@ export async function GET(request: Request) {
   }
 }
 
-// POST: Simpan Data (Versi Anti-Error Undefined)
+// POST: Simpan Data
 export async function POST(request: Request) {
   try {
     const body = await request.json();
@@ -126,12 +121,11 @@ export async function POST(request: Request) {
       details,
     } = body;
 
-    // --- HELPER: Ubah undefined jadi null ---
     const fixVal = (val: any) => (val === undefined ? null : val);
 
     // 1. Simpan/Update Header
     const checkHeader = (await query(
-      "SELECT id FROM penilaian_anekdot WHERE tanggal = ? AND kelas = ?",
+      "SELECT id FROM penilaian_anekdot WHERE tanggal = $1 AND kelas = $2",
       [tanggal, kelas]
     )) as any[];
 
@@ -140,21 +134,21 @@ export async function POST(request: Request) {
     if (Array.isArray(checkHeader) && checkHeader.length > 0) {
       penilaianId = (checkHeader[0] as any).id;
 
-      // UPDATE: Gunakan fixVal() untuk semua parameter opsional
+      // UPDATE Header (Urutan parameter harus pas: $1 s/d $5)
       await query(
-        "UPDATE penilaian_anekdot SET minggu_ke = ?, jumlah_kegiatan = ?, kegiatan = ?, usia = ? WHERE id = ?",
+        "UPDATE penilaian_anekdot SET minggu_ke = $1, jumlah_kegiatan = $2, kegiatan = $3, usia = $4 WHERE id = $5",
         [
           fixVal(minggu_ke),
           fixVal(jumlah_kegiatan),
           fixVal(kegiatan),
-          fixVal(usia), // Usia masuk sini
+          fixVal(usia),
           penilaianId,
         ]
       );
     } else {
-      // INSERT: Gunakan fixVal() juga
-      const result = await query(
-        "INSERT INTO penilaian_anekdot (tanggal, kelas, usia, minggu_ke, jumlah_kegiatan, kegiatan) VALUES (?, ?, ?, ?, ?, ?)",
+      // INSERT Header (PostgreSQL butuh RETURNING id)
+      const result = (await query(
+        "INSERT INTO penilaian_anekdot (tanggal, kelas, usia, minggu_ke, jumlah_kegiatan, kegiatan) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id",
         [
           tanggal,
           kelas,
@@ -163,8 +157,10 @@ export async function POST(request: Request) {
           fixVal(jumlah_kegiatan),
           fixVal(kegiatan),
         ]
-      );
-      penilaianId = (result as any).insertId;
+      )) as any[];
+
+      // Ambil ID dari hasil RETURNING
+      penilaianId = result[0].id;
     }
 
     // 2. Simpan/Update Detail Siswa
@@ -172,38 +168,48 @@ export async function POST(request: Request) {
       await Promise.all(
         details.map(async (item: any) => {
           const checkDetail = (await query(
-            "SELECT id FROM penilaian_anekdot_detail WHERE penilaian_id = ? AND siswa_id = ?",
+            "SELECT id FROM penilaian_anekdot_detail WHERE penilaian_id = $1 AND siswa_id = $2",
             [penilaianId, item.siswa_id]
           )) as any[];
 
-          // Gunakan fixVal() untuk detail juga
           const p_tempat = fixVal(item.tempat);
           const p_peristiwa = fixVal(item.peristiwa);
           const p_kriteria = fixVal(item.kriteria);
 
           if (checkDetail.length > 0) {
             await query(
-              "UPDATE penilaian_anekdot_detail SET tempat = ?, peristiwa = ?, kriteria = ? WHERE id = ?",
+              "UPDATE penilaian_anekdot_detail SET tempat = $1, peristiwa = $2, kriteria = $3 WHERE id = $4",
               [p_tempat, p_peristiwa, p_kriteria, checkDetail[0].id]
             );
           } else {
             await query(
-              "INSERT INTO penilaian_anekdot_detail (penilaian_id, siswa_id, tempat, peristiwa, kriteria) VALUES (?, ?, ?, ?, ?)",
+              "INSERT INTO penilaian_anekdot_detail (penilaian_id, siswa_id, tempat, peristiwa, kriteria) VALUES ($1, $2, $3, $4, $5)",
               [penilaianId, item.siswa_id, p_tempat, p_peristiwa, p_kriteria]
             );
           }
         })
       );
 
-      // 3. CLEAN UP (Hapus siswa yang tidak dicentang)
+      // 3. CLEAN UP (Hapus siswa yang tidak dicentang / dihapus dari list)
       const activeStudentIds = details.map((d: any) => d.siswa_id);
+
       if (activeStudentIds.length > 0) {
-        const placeholders = activeStudentIds.map(() => "?").join(",");
-        const deleteSql = `DELETE FROM penilaian_anekdot_detail WHERE penilaian_id = ? AND siswa_id NOT IN (${placeholders})`;
+        // PERBAIKAN PENTING UNTUK POSTGRESQL "IN CLAUSE"
+        // Kita harus generate $2, $3, $4 secara dinamis sesuai jumlah ID
+        // $1 adalah penilaianId
+
+        const placeholders = activeStudentIds
+          .map((_: any, index: number) => `$${index + 2}`)
+          .join(",");
+
+        const deleteSql = `DELETE FROM penilaian_anekdot_detail WHERE penilaian_id = $1 AND siswa_id NOT IN (${placeholders})`;
+
+        // Spread operator untuk menggabungkan penilaianId dengan array studentIds
         await query(deleteSql, [penilaianId, ...activeStudentIds]);
       } else {
+        // Jika tidak ada siswa sama sekali, hapus semua detail untuk penilaian ini
         await query(
-          "DELETE FROM penilaian_anekdot_detail WHERE penilaian_id = ?",
+          "DELETE FROM penilaian_anekdot_detail WHERE penilaian_id = $1",
           [penilaianId]
         );
       }
@@ -215,7 +221,6 @@ export async function POST(request: Request) {
     });
   } catch (error: any) {
     console.error("Database Error:", error);
-    // Kirim pesan error asli agar terbaca di console browser
     return NextResponse.json(
       { error: error.message || "Gagal menyimpan" },
       { status: 500 }

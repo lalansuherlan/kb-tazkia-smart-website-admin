@@ -16,6 +16,9 @@ export async function GET(request: Request) {
   try {
     // Query "Sakti" untuk Rekapitulasi
     // Menggunakan LEFT JOIN agar siswa yang belum pernah absen pun tetap muncul (dengan nilai 0)
+
+    // PERBAIKAN:
+    // 1. Mengganti '?' menjadi '$1' dan '$2' (Syntax PostgreSQL)
     const sql = `
       SELECT 
         s.id, 
@@ -29,13 +32,15 @@ export async function GET(request: Request) {
         COUNT(a.id) as total_hari
       FROM students s
       LEFT JOIN absensi a ON s.id = a.siswa_id 
-        AND a.tanggal >= ? AND a.tanggal <= ?
+        AND a.tanggal >= $1 AND a.tanggal <= $2
       WHERE s.status = 'active'
       GROUP BY s.id, s.full_name, s.nis, s.class_name
       ORDER BY s.class_name ASC, s.full_name ASC
     `;
 
+    // Parameter array [startDate, endDate] akan masuk ke $1 dan $2 secara berurutan
     const data = await query(sql, [startDate, endDate]);
+
     return NextResponse.json({ success: true, data });
   } catch (error) {
     console.error("Error Rekap Absensi:", error);

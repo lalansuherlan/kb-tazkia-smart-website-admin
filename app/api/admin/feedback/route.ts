@@ -8,6 +8,7 @@ export async function GET() {
     if (!token || !verifyToken(token))
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+    // Query standar (Aman untuk Postgres & MySQL karena tidak ada parameter)
     const rows = await query(
       "SELECT * FROM school_feedback ORDER BY created_at DESC"
     );
@@ -16,6 +17,7 @@ export async function GET() {
       headers: { "Cache-Control": "no-store" },
     });
   } catch (error) {
+    console.error("GET Feedback Error:", error); // Tambahkan log error agar mudah debug
     return NextResponse.json({ error: "Server Error" }, { status: 500 });
   }
 }

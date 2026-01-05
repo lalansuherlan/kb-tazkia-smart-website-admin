@@ -1,49 +1,54 @@
-import mysql from "mysql2/promise";
+import { Pool } from "pg";
 
-// Menambahkan properti mysqlPool ke global object agar TypeScript tidak error
+// Menambahkan properti pgPool ke global object agar TypeScript tidak error
 declare global {
-  var mysqlPool: mysql.Pool | undefined;
+  var pgPool: Pool | undefined;
 }
 
-let pool: mysql.Pool;
+let pool: Pool;
 
-// Konfigurasi Database (Disesuaikan untuk Railway)
+// Ambil URL koneksi dari .env
+const connectionString = process.env.DATABASE_URL;
+
+if (!connectionString) {
+  console.error("❌ ERROR: DATABASE_URL belum didefinisikan di file .env");
+}
+
+// Konfigurasi Database
 const dbConfig = {
-  host: process.env.DB_HOST,
-  user: process.env.DB_USERNAME,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_DATABASE,
-  // Railway menggunakan port acak (bukan 3306), jadi wajib ambil dari env
-  port: Number(process.env.DB_PORT),
-  waitForConnections: true,
-  connectionLimit: 5,
-  queueLimit: 0,
-  // --- KONFIGURASI SSL KHUSUS RAILWAY ---
-  // Railway memerlukan setting ini agar koneksi secure (SSL) tetap jalan
-  // meskipun sertifikatnya self-signed.
+  connectionString: connectionString,
+  // Wajib untuk Supabase (Production & Pooler)
   ssl: {
     rejectUnauthorized: false,
   },
-  // --------------------------------------
+  // Setting tambahan agar koneksi tidak menggantung
+  max: 10,
+  connectionTimeoutMillis: 10000, // 10 detik timeout
+  idleTimeoutMillis: 30000,
 };
 
-// Logika Singleton (Tetap dipertahankan untuk performa):
+// Logika Singleton
 if (process.env.NODE_ENV === "production") {
-  pool = mysql.createPool(dbConfig);
+  pool = new Pool(dbConfig);
 } else {
-  if (!global.mysqlPool) {
-    global.mysqlPool = mysql.createPool(dbConfig);
+  if (!global.pgPool) {
+    global.pgPool = new Pool(dbConfig);
   }
-  pool = global.mysqlPool;
+  pool = global.pgPool;
 }
 
 export async function query(sql: string, values?: any[]) {
   try {
-    const [results] = await pool.execute(sql, values);
-    return results;
+    const res = await pool.query(sql, values);
+    return res.rows;
   } catch (error) {
     console.error("Database Query Error:", error);
-    // Kita return array kosong agar saat build error tidak langsung crash fatal
+    // console.error("SQL yg error:", sql); // Uncomment utk debug jika perlu
     return [];
   }
+}
+
+export async function querySingle(sql: string, values?: any[]) {
+  const rows = await query(sql, values);
+  return rows[0];
 }

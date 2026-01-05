@@ -14,11 +14,18 @@ export async function POST(request: Request) {
       );
     }
 
-    // Simpan ke database (Default status: pending)
+    // --- PERBAIKAN POSTGRESQL ---
+    // Ganti (?, ?, ?, ?, ?) menjadi ($1, $2, $3, $4, $5)
     await query(
       `INSERT INTO school_feedback (name, role, message, type, rating, status) 
-       VALUES (?, ?, ?, ?, ?, 'pending')`,
-      [name, role, message, type, rating || 5]
+       VALUES ($1, $2, $3, $4, $5, 'pending')`,
+      [
+        name,
+        role,
+        message,
+        type,
+        rating || 5, // Default rating 5 jika kosong
+      ]
     );
 
     return NextResponse.json({ message: "Terima kasih atas masukan Anda!" });

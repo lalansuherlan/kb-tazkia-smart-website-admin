@@ -11,14 +11,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Data wajib diisi" }, { status: 400 });
     }
 
-    // Update Query untuk menyimpan phone
+    // --- PERBAIKAN POSTGRESQL ---
+    // Ganti (?, ?, ?, ?, ?) menjadi ($1, $2, $3, $4, $5)
     await query(
-      "INSERT INTO messages (name, email, phone, subject, message) VALUES (?, ?, ?, ?, ?)",
-      [name, email, phone || "-", subject || "Tanpa Subjek", message]
+      "INSERT INTO messages (name, email, phone, subject, message) VALUES ($1, $2, $3, $4, $5)",
+      [
+        name,
+        email,
+        phone || "-", // $3
+        subject || "Tanpa Subjek", // $4
+        message, // $5
+      ]
     );
 
     return NextResponse.json({ message: "Pesan terkirim" }, { status: 201 });
   } catch (error) {
+    console.error("Contact Form Error:", error); // Tambahkan log agar mudah debug
     return NextResponse.json(
       { error: "Gagal mengirim pesan" },
       { status: 500 }

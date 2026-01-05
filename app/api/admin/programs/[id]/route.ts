@@ -2,6 +2,7 @@ import { type NextRequest, NextResponse } from "next/server";
 import { query } from "@/lib/db";
 import { getAuthCookie, verifyToken } from "@/lib/auth";
 
+// PUT: Update Program
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -20,22 +21,20 @@ export async function PUT(
     const { name, description, icon, bg_emoji, color_class, order_index } =
       body;
 
-    // PERBAIKAN DI SINI:
-    // Gunakan "||" atau "??" untuk memastikan nilai tidak undefined.
-    // Jika undefined, ganti dengan nilai default atau null.
-
+    // --- PERBAIKAN POSTGRESQL ---
+    // Ganti ? menjadi $1 s/d $7
     await query(
       `UPDATE programs 
-       SET name = ?, description = ?, icon = ?, bg_emoji = ?, color_class = ?, order_index = ? 
-       WHERE id = ?`,
+       SET name = $1, description = $2, icon = $3, bg_emoji = $4, color_class = $5, order_index = $6 
+       WHERE id = $7`,
       [
         name,
         description,
         icon,
         bg_emoji || "✨", // Fallback ke default emoji
         color_class || "from-green-100 to-emerald-100", // Fallback ke default warna
-        order_index ?? 0, // Gunakan ?? agar angka 0 tidak dianggap false
-        id,
+        Number(order_index ?? 0), // Pastikan menjadi Number
+        id, // Parameter ke-7 (WHERE clause)
       ]
     );
 
@@ -49,6 +48,7 @@ export async function PUT(
   }
 }
 
+// DELETE: Hapus Program
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -62,7 +62,9 @@ export async function DELETE(
 
     const { id } = await params;
 
-    await query("DELETE FROM programs WHERE id = ?", [id]);
+    // --- PERBAIKAN POSTGRESQL ---
+    // Ganti ? menjadi $1
+    await query("DELETE FROM programs WHERE id = $1", [id]);
 
     return NextResponse.json({ message: "Program deleted successfully" });
   } catch (error) {

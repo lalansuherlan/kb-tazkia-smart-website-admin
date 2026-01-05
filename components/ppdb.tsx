@@ -1,25 +1,25 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Check, Sparkles } from "lucide-react";
-import { MessageCircle, PhoneCall } from "lucide-react";
+import { Check, Sparkles, MessageCircle, PhoneCall } from "lucide-react";
 import Link from "next/link";
 import { query } from "@/lib/db";
-import { RowDataPacket } from "mysql2";
 
-// Definisi tipe data sesuai database
-interface PPDBCategory extends RowDataPacket {
+// ✅ Definisi Interface Standar (Tanpa RowDataPacket)
+interface PPDBCategory {
   id: number;
   name: string;
   age_range: string;
   emoji: string;
   color_class: string;
-  benefits: string; // Di DB tipe TEXT (JSON String)
-  is_popular: number; // MySQL mengembalikan boolean sebagai 0 atau 1
+  // PostgreSQL mungkin mengembalikan string atau sudah berupa array object
+  benefits: string | string[];
+  is_popular: boolean; // Postgres return boolean, bukan number (0/1)
 }
 
 // Fungsi ambil data dari DB
 async function getPPDBCategories() {
   try {
+    // Query Standar (Aman untuk Postgres & MySQL)
     const sql = `SELECT * FROM ppdb_categories ORDER BY order_index ASC`;
     const rows = (await query(sql)) as PPDBCategory[];
     return rows;
@@ -33,7 +33,7 @@ export async function PPDB() {
   const dbCategories = await getPPDBCategories();
 
   // Data default/fallback jika database kosong
-  const fallbackCategories = [
+  const fallbackCategories: PPDBCategory[] = [
     {
       id: 1,
       name: "Kelompok Bermain",
@@ -45,23 +45,32 @@ export async function PPDB() {
         "Bermain sensori",
         "Aktivitas ringan",
       ]),
-      is_popular: 0,
+      is_popular: false,
     },
   ];
 
   const categories =
     dbCategories.length > 0 ? dbCategories : fallbackCategories;
 
-  // 1. Ambil dari .env, jika kosong gunakan fallback nomor default
+  // Setup WhatsApp
   const phoneNumber = process.env.NEXT_PUBLIC_WA_NUMBER || "6281234567890";
-
-  // 2. Ambil pesan dari .env
   const rawMessage =
     process.env.NEXT_PUBLIC_WA_MESSAGE || "Halo Admin, saya butuh info.";
-
-  // 3. Encode pesan agar aman untuk URL
   const message = encodeURIComponent(rawMessage);
   const whatsappUrl = `https://wa.me/${phoneNumber}?text=${message}`;
+
+  // Helper untuk parsing JSON dengan aman (Mencegah "Double Parse")
+  const parseBenefits = (data: string | string[]): string[] => {
+    if (Array.isArray(data)) return data; // Jika sudah array (fitur auto-parse Postgres)
+    if (typeof data === "string") {
+      try {
+        return JSON.parse(data);
+      } catch (e) {
+        return ["Manfaat program tersedia"];
+      }
+    }
+    return [];
+  };
 
   return (
     <section
@@ -93,13 +102,8 @@ export async function PPDB() {
           {/* Categories Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {categories.map((category) => {
-              // Parsing JSON string benefits kembali menjadi Array
-              let benefitsList: string[] = [];
-              try {
-                benefitsList = JSON.parse(category.benefits);
-              } catch (e) {
-                benefitsList = ["Manfaat program tersedia"];
-              }
+              // Gunakan helper parse yang aman
+              const benefitsList = parseBenefits(category.benefits);
 
               return (
                 <Card
@@ -112,7 +116,7 @@ export async function PPDB() {
                       : ""
                   }`}
                 >
-                  {/* Badge Populer */}
+                  {/* Badge Populer (Cek Boolean secara eksplisit) */}
                   {category.is_popular ? (
                     <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-orange-400 to-orange-500 text-white px-4 py-1 rounded-full text-xs font-bold shadow-lg whitespace-nowrap">
                       Paling Populer
@@ -155,7 +159,7 @@ export async function PPDB() {
 
           {/* CTA Footer */}
           <div className="text-center space-y-6 p-8 bg-gradient-to-br from-emerald-100/80 via-teal-50 to-cyan-100/80 rounded-3xl border border-emerald-200 shadow-lg shadow-emerald-100/50 relative overflow-hidden">
-            {/* Dekorasi Tambahan (Opsional: Lingkaran Pudar di pojok) */}
+            {/* Dekorasi Tambahan */}
             <div className="absolute top-0 right-0 w-32 h-32 bg-white/40 rounded-full blur-2xl -translate-y-10 translate-x-10 pointer-events-none"></div>
             <div className="absolute bottom-0 left-0 w-32 h-32 bg-emerald-300/20 rounded-full blur-2xl translate-y-10 -translate-x-10 pointer-events-none"></div>
 
@@ -170,7 +174,6 @@ export async function PPDB() {
             </div>
 
             <div className="flex flex-col sm:flex-row justify-center gap-4 relative z-10">
-              {/* ... TOMBOL WHATSAPP & TELEPON (Tetap Sama) ... */}
               <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">
                 <Button className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-200/50 h-12 px-8 text-base rounded-xl transition-all hover:-translate-y-1">
                   <MessageCircle className="w-5 h-5 mr-2" /> Chat WhatsApp Admin

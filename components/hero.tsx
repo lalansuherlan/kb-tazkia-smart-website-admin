@@ -1,24 +1,27 @@
 import { Button } from "@/components/ui/button";
 import { query } from "@/lib/db";
-import { RowDataPacket } from "mysql2";
 import { ImageWithFallback } from "@/components/ui/image-with-fallback";
 import { ArrowRight, Star, Heart, Smile } from "lucide-react";
 import Link from "next/link";
 
-interface PageContent extends RowDataPacket {
+// ✅ Ganti interface menjadi tipe standar
+type PageContent = {
   title: string;
   content: string;
   image_url: string;
-}
+};
 
 async function getHeroContent() {
   try {
+    // Query ini aman (Standard SQL) karena nilainya hardcoded string
     const sql = `
       SELECT title, content, image_url 
       FROM page_content 
       WHERE page_name = 'home' AND section_name = 'hero' 
       LIMIT 1
     `;
+
+    // Casting ke tipe generic kita
     const rows = (await query(sql)) as PageContent[];
     return rows.length > 0 ? rows[0] : null;
   } catch (error) {
@@ -65,7 +68,7 @@ export async function Hero() {
             </div>
 
             {/* Judul Utama */}
-            <h1 className="text-5xl lg:text-7xl font-extrabold tracking-tight text-slate-900 leading-[1.1] animate-in fade-in slide-in-from-bottom-6 duration-1000">
+            <h1 className="text-5xl lg:text-5xl font-extrabold tracking-tight text-slate-900 leading-[1.1] animate-in fade-in slide-in-from-bottom-6 duration-1000">
               {title.split(" ").map((word, i) => (
                 <span
                   key={i}

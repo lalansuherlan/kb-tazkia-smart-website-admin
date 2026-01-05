@@ -1,6 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { query } from "@/lib/db";
-import type { ResultSetHeader } from "mysql2";
 
 export async function POST(request: NextRequest) {
   try {
@@ -16,38 +15,42 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // QUERY SQL SESUAI DDL ANDA:
-    // 1. Kolom 'program_id' wajib ada
-    // 2. Kolom tanggal lahir adalah 'child_birth_date'
+    // --- PERBAIKAN POSTGRESQL ---
+    // 1. Ganti ? menjadi $1, $2, dst.
+    // 2. Tambahkan 'RETURNING id' di akhir query untuk mengambil ID baru
     const sql = `
       INSERT INTO ppdb_applications 
       (program_id, program_name, child_name, child_birth_date, child_gender, parent_name, parent_phone, parent_email, address, notes, status) 
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+      RETURNING id
     `;
 
     const values = [
-      body.program_id, // Wajib: ID Program (Int)
-      body.program_name, // Nama Program
-      body.child_name,
-      body.child_dob, // Frontend kirim 'child_dob', kita masukkan ke kolom 'child_birth_date'
-      body.child_gender,
-      body.parent_name,
-      body.parent_phone,
-      body.parent_email,
-      body.address,
-      body.notes || null,
-      "pending",
+      body.program_id, // $1
+      body.program_name, // $2
+      body.child_name, // $3
+      body.child_dob, // $4 (Frontend kirim 'child_dob')
+      body.child_gender, // $5
+      body.parent_name, // $6
+      body.parent_phone, // $7
+      body.parent_email, // $8
+      body.address, // $9
+      body.notes || null, // $10
+      "pending", // $11
     ];
 
-    const result = await query(sql, values);
-    const header = result as ResultSetHeader;
+    // Eksekusi Query
+    // Hasil dari query dengan RETURNING id adalah array of objects: [{ id: 123 }]
+    const result: any = await query(sql, values);
 
-    if (!header.insertId) {
-      throw new Error("Gagal mendapatkan ID insert");
+    if (result.length === 0) {
+      throw new Error("Gagal menyimpan data (No ID returned)");
     }
 
+    const newId = result[0].id;
+
     return NextResponse.json(
-      { id: header.insertId, message: "Pendaftaran Berhasil" },
+      { id: newId, message: "Pendaftaran Berhasil" },
       { status: 201 }
     );
   } catch (error: any) {

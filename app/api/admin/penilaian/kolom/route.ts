@@ -18,11 +18,13 @@ export async function GET(request: Request) {
     let filterCondition = "";
     let filterParam = "";
 
+    // Urutan Parameter Utama: [tanggal ($1), academicYear ($2), academicYear ($3)]
+    // Maka filterParam akan menjadi $4
     if (teacherId) {
-      filterCondition = "AND s.teacher_id = ?";
+      filterCondition = "AND s.teacher_id = $4";
       filterParam = teacherId;
     } else if (kelas) {
-      filterCondition = "AND s.program_name = ?";
+      filterCondition = "AND s.program_name = $4";
       filterParam = kelas;
     } else {
       return NextResponse.json({ success: true, data: [] });
@@ -37,9 +39,9 @@ export async function GET(request: Request) {
         abs.status as status_absensi
       FROM students s
       LEFT JOIN absensi abs 
-        ON s.id = abs.siswa_id AND abs.tanggal = ? AND abs.academic_year = ?
+        ON s.id = abs.siswa_id AND abs.tanggal = $1 AND abs.academic_year = $2
       WHERE s.status = 'active'
-        AND s.academic_year = ?
+        AND s.academic_year = $3
         ${filterCondition}
       ORDER BY s.full_name ASC
     `;
@@ -57,7 +59,8 @@ export async function GET(request: Request) {
 
     // 3. AMBIL HEADER & DETAIL NILAI (Jika ada)
     const detectedClass = rows[0].kelas_siswa;
-    const headerSql = `SELECT * FROM penilaian_kolom WHERE tanggal = ? AND kelas = ? LIMIT 1`;
+    // Postgres: Gunakan $1, $2
+    const headerSql = `SELECT * FROM penilaian_kolom WHERE tanggal = $1 AND kelas = $2 LIMIT 1`;
     const existingHeader = (await query(headerSql, [
       tanggal,
       detectedClass,
@@ -72,7 +75,7 @@ export async function GET(request: Request) {
       headerId = (existingHeader[0] as any).id;
 
       // Ambil detail nilai
-      const detailSql = `SELECT * FROM penilaian_kolom_detail WHERE penilaian_kolom_id = ?`;
+      const detailSql = `SELECT * FROM penilaian_kolom_detail WHERE penilaian_kolom_id = $1`;
       details = (await query(detailSql, [headerId])) as any[];
     }
 
@@ -81,12 +84,11 @@ export async function GET(request: Request) {
       const detail = details.find((d: any) => d.siswa_id === row.siswa_id);
 
       // Logic Integrasi Absensi
-      // Jika Absen (Sakit/Izin/Alpha) dan belum ada nilai manual, otomatis isi semua kolom
       let defaultVal = "";
       if (!detail) {
         if (row.status_absensi === "Sakit") defaultVal = "S";
         else if (row.status_absensi === "Izin") defaultVal = "I";
-        else if (row.status_absensi === "Alpa") defaultVal = "A";
+        else if (row.status_absensi === "Alpha") defaultVal = "A"; // Alpha biasanya ditulis Alpha/Alpa
       }
 
       return {
@@ -110,12 +112,10 @@ export async function GET(request: Request) {
   }
 }
 
-// POST: Simpan Data
-// POST: Simpan Data Penilaian Kolom (Update: Tanpa Jumlah Kegiatan)
+// POST: Simpan Data Penilaian Kolom
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    // ❌ Hapus jumlah_kegiatan dari destructuring
     const {
       tanggal,
       kelas,
@@ -132,19 +132,20 @@ export async function POST(request: Request) {
 
     // 1. Simpan/Update Header
     const checkHeader = (await query(
-      "SELECT id FROM penilaian_kolom WHERE tanggal = ? AND kelas = ?",
+      "SELECT id FROM penilaian_kolom WHERE tanggal = $1 AND kelas = $2",
       [tanggal, kelas]
     )) as any[];
+
     let penilaianId;
 
     if (checkHeader.length > 0) {
       penilaianId = (checkHeader[0] as any).id;
-      // UPDATE: Tanpa jumlah_kegiatan
+      // UPDATE (Ganti ? jadi $1, $2 dst)
       await query(
         `UPDATE penilaian_kolom SET 
-            topik_kegiatan=?, 
-            indikator_1=?, indikator_2=?, indikator_3=?, indikator_4=? 
-         WHERE id=?`,
+            topik_kegiatan=$1, 
+            indikator_1=$2, indikator_2=$3, indikator_3=$4, indikator_4=$5 
+         WHERE id=$6`,
         [
           fixVal(topik_kegiatan),
           fixVal(indikator_1),
@@ -155,11 +156,11 @@ export async function POST(request: Request) {
         ]
       );
     } else {
-      // INSERT: Tanpa jumlah_kegiatan
-      const res = await query(
+      // INSERT (Postgres butuh RETURNING id)
+      const res = (await query(
         `INSERT INTO penilaian_kolom 
             (tanggal, kelas, topik_kegiatan, indikator_1, indikator_2, indikator_3, indikator_4) 
-         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+         VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
         [
           tanggal,
           kelas,
@@ -169,32 +170,42 @@ export async function POST(request: Request) {
           fixVal(indikator_3),
           fixVal(indikator_4),
         ]
-      );
-      penilaianId = (res as any).insertId;
+      )) as any[];
+
+      penilaianId = res[0].id; // Ambil ID dari hasil RETURNING
     }
 
-    // 2. Simpan Detail (Metode Delete All & Insert All agar sinkron dengan grid)
+    // 2. Simpan Detail
+    // Hapus data lama dulu (Reset)
     await query(
-      "DELETE FROM penilaian_kolom_detail WHERE penilaian_kolom_id = ?",
+      "DELETE FROM penilaian_kolom_detail WHERE penilaian_kolom_id = $1",
       [penilaianId]
     );
 
     if (details && Array.isArray(details)) {
-      const values = details.map((item: any) => [
-        penilaianId,
-        item.siswa_id,
-        fixVal(item.nilai_1),
-        fixVal(item.nilai_2),
-        fixVal(item.nilai_3),
-        fixVal(item.nilai_4),
-      ]);
+      // PERBAIKAN: Postgres tidak support bulk insert `VALUES ?` [[arr]]
+      // Kita gunakan Promise.all untuk insert satu per satu (lebih aman & mudah dibaca)
 
-      if (values.length > 0) {
-        await query(
-          "INSERT INTO penilaian_kolom_detail (penilaian_kolom_id, siswa_id, nilai_1, nilai_2, nilai_3, nilai_4) VALUES ?",
-          [values]
-        );
-      }
+      await Promise.all(
+        details.map((item: any) => {
+          // Hanya insert jika ada siswa_id (validasi ringan)
+          if (!item.siswa_id) return;
+
+          return query(
+            `INSERT INTO penilaian_kolom_detail 
+              (penilaian_kolom_id, siswa_id, nilai_1, nilai_2, nilai_3, nilai_4) 
+             VALUES ($1, $2, $3, $4, $5, $6)`,
+            [
+              penilaianId,
+              item.siswa_id,
+              fixVal(item.nilai_1),
+              fixVal(item.nilai_2),
+              fixVal(item.nilai_3),
+              fixVal(item.nilai_4),
+            ]
+          );
+        })
+      );
     }
 
     return NextResponse.json({
@@ -202,7 +213,7 @@ export async function POST(request: Request) {
       message: "Penilaian Kolom Berhasil Disimpan",
     });
   } catch (error) {
-    console.error(error);
+    console.error("Error Simpan Penilaian Kolom:", error);
     return NextResponse.json({ error: "Gagal menyimpan" }, { status: 500 });
   }
 }

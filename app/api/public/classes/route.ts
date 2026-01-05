@@ -1,13 +1,14 @@
 import { NextResponse } from "next/server";
 import { query } from "@/lib/db";
 
+// Definisi tipe data hasil query
 interface StudentRow {
   student_id: number;
   student_name: string;
   student_photo: string | null;
   gender: string;
   class_name: string;
-  academic_year: string; // Tambahkan ini
+  academic_year: string;
   teacher_name: string | null;
   teacher_photo: string | null;
   teacher_id: number | null;
@@ -15,6 +16,7 @@ interface StudentRow {
 
 export async function GET() {
   try {
+    // Query Standard SQL (Aman untuk Postgres & MySQL)
     const sql = `
       SELECT 
         s.id as student_id,
@@ -32,17 +34,20 @@ export async function GET() {
       ORDER BY s.class_name ASC, t.name ASC, s.full_name ASC
     `;
 
+    // Eksekusi query
     const rows = (await query(sql)) as StudentRow[];
 
+    // Proses Grouping Data (Logic JS tetap sama)
     const groups: Record<string, any> = {};
 
     rows.forEach((row) => {
+      // Buat unique key kombinasi Kelas + Guru
       const uniqueKey = `${row.class_name}_${row.teacher_id || "no-teacher"}`;
 
       if (!groups[uniqueKey]) {
         groups[uniqueKey] = {
           className: row.class_name,
-          academicYear: row.academic_year, // Masukkan ke grup
+          academicYear: row.academic_year,
           teacherName: row.teacher_name || "Belum Ada Wali Kelas",
           teacherPhoto: row.teacher_photo,
           students: [],
@@ -59,6 +64,7 @@ export async function GET() {
 
     const result = Object.values(groups);
 
+    // Return JSON dengan header no-cache
     return NextResponse.json(result, {
       headers: { "Cache-Control": "no-store, max-age=0" },
     });

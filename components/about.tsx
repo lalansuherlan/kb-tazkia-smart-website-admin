@@ -1,23 +1,27 @@
 import { query } from "@/lib/db";
-import { RowDataPacket } from "mysql2";
 import { CheckCircle2, Leaf } from "lucide-react";
 import { ImageWithFallback } from "@/components/ui/image-with-fallback";
 
-interface PageContent extends RowDataPacket {
+// ✅ Ganti interface menjadi tipe standar TypeScript
+type PageContent = {
   title: string;
   content: string;
   image_url: string;
-}
+};
 
 // 1. Fetch Data from Database
 async function getAboutContent() {
   try {
+    // Query ini AMAN untuk PostgreSQL (Standard SQL)
+    // Tidak perlu ubah ke $1 karena parameternya hardcoded string ('home', 'about')
     const sql = `
       SELECT title, content, image_url
       FROM page_content
       WHERE page_name = 'home' AND section_name = 'about'
       LIMIT 1
     `;
+
+    // Casting ke tipe generic PageContent[]
     const rows = (await query(sql)) as PageContent[];
     return rows.length > 0 ? rows[0] : null;
   } catch (error) {

@@ -1,7 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server";
-// 👇 IMPORT CLOUDINARY (Hapus fs dan path karena tidak dipakai lagi)
 import { v2 as cloudinary } from "cloudinary";
-// 👇 IMPORT AUTH (Tetap dipertahankan)
 import { getAuthCookie, verifyToken } from "@/lib/auth";
 
 // Konfigurasi Cloudinary
@@ -13,12 +11,13 @@ cloudinary.config({
 
 export async function POST(request: NextRequest) {
   try {
-    // 👇 1. CEK LOGIN (Sama seperti sebelumnya)
+    // 1. CEK LOGIN
     const token = await getAuthCookie();
     if (!token || !verifyToken(token)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // 2. AMBIL DATA FILE
     const data = await request.formData();
     const file: File | null = data.get("file") as unknown as File;
 
@@ -29,20 +28,27 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 👇 2. Konversi File ke Buffer (Persiapan kirim ke Cloudinary)
+    // Validasi Ukuran (Opsional: Misal max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      return NextResponse.json(
+        { error: "Ukuran file terlalu besar (Maks 5MB)" },
+        { status: 400 }
+      );
+    }
+
+    // 3. KONVERSI KE BUFFER & BASE64
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
-
-    // 👇 3. Upload ke Cloudinary (Bagian Utama)
-    // Kita ubah file jadi format base64 agar bisa dikirim langsung tanpa simpan di disk
     const fileBase64 = `data:${file.type};base64,${buffer.toString("base64")}`;
 
-    const result = await new Promise<any>((resolve, reject) => {
+    // 4. UPLOAD KE CLOUDINARY
+    const uploadResult = await new Promise((resolve, reject) => {
       cloudinary.uploader.upload(
         fileBase64,
         {
-          folder: "kb_tazkia_uploads", // Nama folder di Cloudinary (Bebas ganti)
-          resource_type: "auto", // Otomatis deteksi (gambar/pdf/dll)
+          folder: "kb_tazkia_uploads", // Folder tujuan
+          resource_type: "auto", // Auto detect (img/video/pdf)
+          public_id: `upload_${Date.now()}`, // Opsional: Nama file unik
         },
         (error, result) => {
           if (error) reject(error);
@@ -51,16 +57,18 @@ export async function POST(request: NextRequest) {
       );
     });
 
-    // 👇 4. Return URL dari Cloudinary
-    // result.secure_url adalah link https yang aman dan permanen
+    // Casting result agar TypeScript tidak bingung
+    const result = uploadResult as any;
+
     return NextResponse.json({
-      url: result.secure_url,
-      message: "Upload ke Cloudinary berhasil",
+      url: result.secure_url, // URL HTTPS aman
+      public_id: result.public_id,
+      message: "Upload berhasil",
     });
-  } catch (error) {
-    console.error("Cloudinary Upload Error:", error);
+  } catch (error: any) {
+    console.error("Cloudinary Error:", error);
     return NextResponse.json(
-      { error: "Gagal mengupload file ke Cloud" },
+      { error: "Gagal upload file", details: error.message },
       { status: 500 }
     );
   }
