@@ -1,8 +1,58 @@
+"use client";
+
 import Link from "next/link";
-import { Facebook, Instagram, MapPin, Mail, Phone } from "lucide-react";
+import { useState, useEffect } from "react";
+import {
+  Facebook,
+  Instagram,
+  MapPin,
+  Mail,
+  Phone,
+  Youtube,
+} from "lucide-react";
+
+// Tipe data sesuai database
+type SiteSettings = {
+  school_name: string;
+  email: string;
+  phone: string;
+  whatsapp_number: string;
+  address: string;
+  instagram_url: string;
+  facebook_url: string;
+  tiktok_url: string;
+  youtube_url: string;
+};
 
 export function Footer() {
   const currentYear = new Date().getFullYear();
+  const [settings, setSettings] = useState<SiteSettings | null>(null);
+
+  // 1. Fetch Data dari Database
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const res = await fetch("/api/admin/settings");
+        if (res.ok) {
+          const data = await res.json();
+          setSettings(data);
+        }
+      } catch (error) {
+        console.error("Gagal mengambil data footer:", error);
+      }
+    };
+    fetchSettings();
+  }, []);
+
+  // 2. Tentukan Data Tampil (Gunakan Fallback jika DB belum loading)
+  const schoolName = settings?.school_name || "KB Tazkia Smart";
+  const email = settings?.email || "kbtazkiasmart@gmail.com";
+  // Prioritaskan telepon kantor, jika kosong gunakan WA
+  const phone =
+    settings?.phone || settings?.whatsapp_number || "+62 812-3456-7890";
+  const address =
+    settings?.address ||
+    "De Green Residence Blok C No. 17\nDesa Bojongloa, Kec. Rancaekek\nKabupaten Bandung, Jawa Barat";
 
   return (
     <footer className="w-full bg-gradient-to-b from-emerald-50 to-cyan-50 border-t-4 border-emerald-400 relative overflow-hidden">
@@ -31,7 +81,7 @@ export function Footer() {
                   Yayasan Tyasana Sinergi
                 </span>
                 <h3 className="font-extrabold text-xl text-emerald-950 leading-none">
-                  KB Tazkia Smart
+                  {schoolName}
                 </h3>
               </div>
             </div>
@@ -41,36 +91,58 @@ export function Footer() {
               berkarakter melalui pembelajaran yang menyenangkan dan islami.
             </p>
 
-            {/* Social Media Icons */}
+            {/* Social Media Icons (Hanya muncul jika link diisi di Admin) */}
             <div className="flex gap-3 pt-2">
-              <Link
-                href="#"
-                aria-label="Facebook"
-                className="w-8 h-8 flex items-center justify-center rounded-full bg-emerald-100 text-emerald-600 hover:bg-emerald-600 hover:text-white transition-all duration-300"
-              >
-                <Facebook size={16} />
-              </Link>
-              <Link
-                href="#"
-                aria-label="Instagram"
-                className="w-8 h-8 flex items-center justify-center rounded-full bg-pink-100 text-pink-500 hover:bg-pink-500 hover:text-white transition-all duration-300"
-              >
-                <Instagram size={16} />
-              </Link>
-              <Link
-                href="#"
-                aria-label="TikTok"
-                className="w-8 h-8 flex items-center justify-center rounded-full bg-black/5 text-black hover:bg-black hover:text-white transition-all duration-300"
-              >
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="currentColor"
+              {settings?.facebook_url && (
+                <Link
+                  href={settings.facebook_url}
+                  target="_blank"
+                  aria-label="Facebook"
+                  className="w-8 h-8 flex items-center justify-center rounded-full bg-emerald-100 text-emerald-600 hover:bg-emerald-600 hover:text-white transition-all duration-300"
                 >
-                  <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.68v13.67a2.4 2.4 0 1 1-2.4-2.4c.27 0 .53.03.79.08V9.24a6.1 6.1 0 0 0-.79-.05A6.11 6.11 0 0 0 5 15.11V20a8.94 8.94 0 0 0 4.34 1.44c4.54 0 8.74-3.64 8.74-8.15v-5.62a7.12 7.12 0 0 0 4.1 1.26v-3.21a4.7 4.7 0 0 1-.55-.05z" />
-                </svg>
-              </Link>
+                  <Facebook size={16} />
+                </Link>
+              )}
+
+              {settings?.instagram_url && (
+                <Link
+                  href={settings.instagram_url}
+                  target="_blank"
+                  aria-label="Instagram"
+                  className="w-8 h-8 flex items-center justify-center rounded-full bg-pink-100 text-pink-500 hover:bg-pink-500 hover:text-white transition-all duration-300"
+                >
+                  <Instagram size={16} />
+                </Link>
+              )}
+
+              {settings?.tiktok_url && (
+                <Link
+                  href={settings.tiktok_url}
+                  target="_blank"
+                  aria-label="TikTok"
+                  className="w-8 h-8 flex items-center justify-center rounded-full bg-black/5 text-black hover:bg-black hover:text-white transition-all duration-300"
+                >
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                  >
+                    <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.68v13.67a2.4 2.4 0 1 1-2.4-2.4c.27 0 .53.03.79.08V9.24a6.1 6.1 0 0 0-.79-.05A6.11 6.11 0 0 0 5 15.11V20a8.94 8.94 0 0 0 4.34 1.44c4.54 0 8.74-3.64 8.74-8.15v-5.62a7.12 7.12 0 0 0 4.1 1.26v-3.21a4.7 4.7 0 0 1-.55-.05z" />
+                  </svg>
+                </Link>
+              )}
+
+              {settings?.youtube_url && (
+                <Link
+                  href={settings.youtube_url}
+                  target="_blank"
+                  aria-label="Youtube"
+                  className="w-8 h-8 flex items-center justify-center rounded-full bg-red-100 text-red-600 hover:bg-red-600 hover:text-white transition-all duration-300"
+                >
+                  <Youtube size={16} />
+                </Link>
+              )}
             </div>
           </div>
 
@@ -82,7 +154,7 @@ export function Footer() {
             <ul className="space-y-2 text-sm text-emerald-800">
               <li>
                 <Link
-                  href="#hero"
+                  href="/#hero"
                   className="hover:text-emerald-600 hover:pl-1 transition-all inline-block"
                 >
                   Beranda
@@ -90,7 +162,7 @@ export function Footer() {
               </li>
               <li>
                 <Link
-                  href="#about"
+                  href="/#about"
                   className="hover:text-emerald-600 hover:pl-1 transition-all inline-block"
                 >
                   Tentang Kami
@@ -98,7 +170,7 @@ export function Footer() {
               </li>
               <li>
                 <Link
-                  href="#programs"
+                  href="/#programs"
                   className="hover:text-emerald-600 hover:pl-1 transition-all inline-block"
                 >
                   Program Unggulan
@@ -106,7 +178,7 @@ export function Footer() {
               </li>
               <li>
                 <Link
-                  href="#gallery"
+                  href="/#gallery"
                   className="hover:text-emerald-600 hover:pl-1 transition-all inline-block"
                 >
                   Galeri Kegiatan
@@ -123,7 +195,7 @@ export function Footer() {
             <ul className="space-y-2 text-sm text-emerald-800">
               <li>
                 <Link
-                  href="#ppdb"
+                  href="/#ppdb"
                   className="hover:text-emerald-600 hover:pl-1 transition-all inline-block font-medium"
                 >
                   Pendaftaran PPDB
@@ -131,7 +203,7 @@ export function Footer() {
               </li>
               <li>
                 <Link
-                  href="#contact"
+                  href="/#contact"
                   className="hover:text-emerald-600 hover:pl-1 transition-all inline-block"
                 >
                   Hubungi Kami
@@ -161,7 +233,7 @@ export function Footer() {
                 <div>
                   <p className="font-bold text-emerald-900">Telepon/WA</p>
                   <p className="text-xs opacity-80 mt-0.5 hover:text-emerald-600 transition-colors cursor-pointer">
-                    +62 812-3456-7890 (Admin)
+                    {phone}
                   </p>
                 </div>
               </div>
@@ -172,9 +244,7 @@ export function Footer() {
                 </div>
                 <div>
                   <p className="font-bold text-emerald-900">Email</p>
-                  <p className="text-xs opacity-80 mt-0.5">
-                    kbtazkiasmart@gmail.com
-                  </p>
+                  <p className="text-xs opacity-80 mt-0.5">{email}</p>
                 </div>
               </div>
 
@@ -182,13 +252,11 @@ export function Footer() {
                 <div className="p-2 bg-white rounded-full shadow-sm text-cyan-500 group-hover:text-cyan-600 transition-colors">
                   <MapPin size={14} />
                 </div>
-                <div className="text-xs leading-relaxed">
+                <div className="text-xs leading-relaxed whitespace-pre-line">
                   <p className="font-bold text-emerald-900 mb-0.5">
                     Lokasi Sekolah
                   </p>
-                  <p>De Green Residence Blok C No. 17</p>
-                  <p>Desa Bojongloa, Kec. Rancaekek</p>
-                  <p>Kabupaten Bandung, Jawa Barat</p>
+                  {address}
                 </div>
               </div>
             </div>
@@ -200,10 +268,8 @@ export function Footer() {
           <div className="flex flex-col md:flex-row items-center gap-2 text-center md:text-left">
             <p>
               &copy; {currentYear}{" "}
-              <span className="font-bold text-emerald-800">
-                KB Tazkia Smart
-              </span>
-              .<span className="hidden md:inline mx-2 text-emerald-300">|</span>
+              <span className="font-bold text-emerald-800">{schoolName}</span>.
+              <span className="hidden md:inline mx-2 text-emerald-300">|</span>
               <br className="md:hidden" />
               Dikelola oleh{" "}
               <span className="font-semibold">Yayasan Tyasana Sinergi</span>

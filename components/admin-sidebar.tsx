@@ -44,6 +44,13 @@ const menuStructure = [
       { href: "/admin/ppdb", label: "Data Pendaftar" },
     ],
   },
+
+  {
+    href: "/admin/settings",
+    label: "Pengaturan Web",
+    icon: "⚙️", // Ikon Gear cocok untuk settings
+  },
+
   { href: "/admin/users", label: "User Management", icon: "⚙️" },
 ];
 
