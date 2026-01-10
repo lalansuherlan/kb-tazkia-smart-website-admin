@@ -9,27 +9,16 @@ const _geist = Geist({ subsets: ["latin"] });
 const _geistMono = Geist_Mono({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "KB Tazkia Smart - Taman Kanak-Kanak Terpadu",
+  title: "Kober Tazkia Smart",
   description:
-    "KB Tazkia Smart menyediakan pendidikan anak berkualitas dengan pembelajaran cerdas dan bermakna",
+    "Menjadi KOBER unggulan dalam membentuk anaka yang smart, mandiri, kreatif, dan berakhlak mulia.",
   generator: "v0.app",
+  // --- BAGIAN INI YANG DIUBAH ---
   icons: {
-    icon: [
-      {
-        url: "/icon-light-32x32.png",
-        media: "(prefers-color-scheme: light)",
-      },
-      {
-        url: "/icon-dark-32x32.png",
-        media: "(prefers-color-scheme: dark)",
-      },
-      {
-        url: "/icon.svg",
-        type: "image/svg+xml",
-      },
-    ],
-    apple: "/apple-icon.png",
+    icon: "/logo-tazkia.jpeg", // Mengarah ke file di folder public
+    apple: "/logo-tazkia.jpeg", // Ikon untuk iPhone/iPad (add to home screen)
   },
+  // -----------------------------
 };
 
 export default function RootLayout({

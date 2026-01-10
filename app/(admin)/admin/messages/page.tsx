@@ -32,13 +32,23 @@ export default function MessagesPage() {
 
   // Helper untuk membuka WhatsApp Web
   const handleReplyWA = (phone: string, name: string) => {
-    // Bersihkan nomor (ganti 08.. jadi 628..)
     let cleanPhone = phone.replace(/\D/g, "");
     if (cleanPhone.startsWith("0")) {
       cleanPhone = "62" + cleanPhone.substring(1);
     }
     const url = `https://wa.me/${cleanPhone}?text=Halo Bapak/Ibu ${name}, kami dari KB Tazkia Smart menanggapi pesan Anda...`;
     window.open(url, "_blank");
+  };
+
+  // --- 1. HELPER BARU: Format Pesan agar \n jadi baris baru ---
+  const formatMessage = (content: string) => {
+    if (!content) return null;
+    // Split text berdasarkan "\n" (literal string) ATAU enter asli
+    return content.split(/\\n|\n/).map((line, index) => (
+      <span key={index} className="block min-h-[1.5em]">
+        {line}
+      </span>
+    ));
   };
 
   const filtered = messages.filter(
@@ -107,9 +117,12 @@ export default function MessagesPage() {
                 <h4 className="font-bold text-lg text-emerald-900 mb-2 border-b pb-2 border-gray-100">
                   {msg.subject}
                 </h4>
-                <p className="text-gray-700 text-sm whitespace-pre-line bg-gray-50 p-4 rounded-lg border border-gray-100 leading-relaxed">
-                  {msg.message}
-                </p>
+
+                {/* --- 2. UPDATE BAGIAN INI: Menggunakan formatMessage --- */}
+                {/* Kita ganti <p> jadi <div> agar valid saat merender block element */}
+                <div className="text-slate-700 text-sm bg-slate-50 p-6 rounded-lg border border-slate-200 leading-relaxed shadow-sm">
+                  {formatMessage(msg.message)}
+                </div>
               </div>
 
               <div className="mt-4 flex flex-wrap justify-end gap-3 pt-4 border-t border-gray-100">

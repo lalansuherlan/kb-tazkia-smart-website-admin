@@ -43,10 +43,10 @@ export async function About() {
 
   // Static highlights (keep hardcoded for simplicity unless needed otherwise)
   const highlights = [
-    "Kurikulum modern yang disesuaikan dengan kebutuhan anak",
-    "Guru berpengalaman dan profesional",
-    "Fasilitas lengkap dan aman",
-    "Pembelajaran berbasis bermain yang menyenangkan",
+    "Membentuk anak usia dini yang cerdas, sehat, mandiri, dan berakhlak",
+    "Menyediakan lingkungan belajar yang aman, ramah anak dan menyenangkan",
+    "Menumbuhkan rasa percaya diri dan kemampuan sosial anak",
+    "Menjadi lembaga PAUD yang dipercaya masyarakat dan mampu bersaing secara sehat",
   ];
 
   return (
@@ -84,7 +84,7 @@ export async function About() {
               <div className="flex items-center gap-2">
                 <Leaf className="w-5 h-5 text-emerald-600" />
                 <p className="text-emerald-600 font-semibold text-sm uppercase tracking-wider">
-                  Tentang KB Tazkia Smart
+                  Misi dan Tujuan Tazkia Smart
                 </p>
               </div>
 
