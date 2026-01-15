@@ -13,8 +13,8 @@ type PageContent = {
 };
 
 async function getHeroContent() {
+  noStore();
   try {
-    noStore();
     // Query ini aman (Standard SQL) karena nilainya hardcoded string
     const sql = `
       SELECT title, content, image_url 
