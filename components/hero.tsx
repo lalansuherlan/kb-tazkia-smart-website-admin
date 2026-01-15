@@ -3,6 +3,7 @@ import { query } from "@/lib/db";
 import { ImageWithFallback } from "@/components/ui/image-with-fallback";
 import { ArrowRight, Star, Heart, Smile } from "lucide-react";
 import Link from "next/link";
+import { unstable_noStore as noStore } from "next/cache";
 
 // ✅ Ganti interface menjadi tipe standar
 type PageContent = {
@@ -13,6 +14,7 @@ type PageContent = {
 
 async function getHeroContent() {
   try {
+    noStore();
     // Query ini aman (Standard SQL) karena nilainya hardcoded string
     const sql = `
       SELECT title, content, image_url 
