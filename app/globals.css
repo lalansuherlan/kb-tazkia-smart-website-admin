@@ -149,3 +149,41 @@
     print-color-adjust: exact !important;
   }
 }
+
+/* app/globals.css */
+
+/* --- Animasi Marquee (Teks Berjalan) --- */
+@keyframes marquee {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
+.animate-marquee {
+  display: flex;
+  animation: marquee 25s linear infinite;
+}
+
+/* --- Animasi Pulse Slow (Denyut Pelan untuk Lonceng) --- */
+@keyframes pulse-slow {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.animate-pulse-slow {
+  animation: pulse-slow 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* --- Utility untuk Pause saat Hover --- */
+/* Agar teks berhenti saat mouse diarahkan (untuk kenyamanan baca) */
+.group:hover .animate-marquee {
+  animation-play-state: paused;
+}
