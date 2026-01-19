@@ -11,17 +11,18 @@ type Props = {
 // PATCH: Update Data Siswa
 export async function PATCH(request: NextRequest, props: Props) {
   try {
-    // 1. Cek Token
     const token = await getAuthCookie();
     if (!token || !verifyToken(token)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // 2. Ambil ID dari Params
     const params = await props.params;
     const id = params.id;
 
-    if (!id || id === "undefined") {
+    // Pastikan ID dikonversi ke integer agar aman
+    const studentId = parseInt(id);
+
+    if (!studentId || isNaN(studentId)) {
       return NextResponse.json(
         { error: "ID Siswa tidak valid" },
         { status: 400 }
@@ -39,14 +40,11 @@ export async function PATCH(request: NextRequest, props: Props) {
       photo_url,
     } = body;
 
-    // Bersihkan teacher_id
     let safeTeacherId = null;
     if (teacher_id && teacher_id !== "") {
       safeTeacherId = teacher_id;
     }
 
-    // Susun Parameter
-    // Urutan harus sama persis dengan $1, $2, dst di query bawah
     const sqlParams = [
       status, // $1
       full_name, // $2
@@ -55,28 +53,29 @@ export async function PATCH(request: NextRequest, props: Props) {
       academic_year, // $5
       safeTeacherId, // $6
       photo_url, // $7
-      id, // $8 (WHERE clause)
+      studentId, // $8 (WHERE clause)
     ];
 
-    // Sanitasi undefined -> null
     const safeParams = sqlParams.map((val) => (val === undefined ? null : val));
 
-    // --- PERBAIKAN POSTGRESQL ---
-    // 1. Ganti ? menjadi $1 s/d $8
+    // --- PERBAIKAN UTAMA DI SINI ---
+    // Tambahkan "RETURNING id" di akhir query.
+    // Ini memaksa Postgres mengembalikan ID jika update berhasil.
     const result: any = await query(
       `UPDATE students 
        SET status=$1, full_name=$2, nis=$3, class_name=$4, academic_year=$5, teacher_id=$6, photo_url=$7 
-       WHERE id=$8`,
+       WHERE id=$8 
+       RETURNING id`,
       safeParams
     );
 
-    // 2. Ganti affectedRows (MySQL) menjadi rowCount (PostgreSQL)
-    // Note: Beberapa wrapper db mungkin mengembalikan result yang berbeda,
-    // tapi standard 'pg' library menggunakan rowCount.
-    const affected = result.rowCount ?? result.affectedRows ?? 0;
+    // Cek apakah ada data yang dikembalikan
+    // Asumsi fungsi query mengembalikan array rows
+    const updatedRows = Array.isArray(result) ? result : result.rows;
 
-    if (affected === 0) {
-      console.warn("⚠️ Query dijalankan tapi ID tidak ditemukan di database.");
+    // Jika array kosong, berarti tidak ada baris yang di-update (ID tidak ketemu)
+    if (!updatedRows || updatedRows.length === 0) {
+      console.warn(`⚠️ Query dijalankan tapi ID ${studentId} tidak ditemukan.`);
       return NextResponse.json(
         { message: "ID tidak ditemukan" },
         { status: 404 }
